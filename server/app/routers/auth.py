@@ -1,0 +1,61 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Cookie, Depends, Form, Request
+
+from app.controllers.auth import AuthController
+from app.database.session import get_async_session
+from app.core.permission import permission_required
+from app.utils.response import response as res
+
+router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+async def controller(db: AsyncSession = Depends(get_async_session)):
+    return AuthController(db)
+
+
+@router.post("/send-auth-link")
+async def send_auth_link(
+    email: str = Form(..., min_length=3),
+    controller: AuthController = Depends(controller)
+):
+    return await controller.send_auth_link(email)
+
+
+@router.post("/verify/{token}")
+async def verify_auth_link(token: str, controller: AuthController = Depends(controller)):
+    return await controller.verify_auth_link(token)
+
+
+@router.post("/login")
+async def login_user(
+    username: str = Form(..., min_length=3),
+    password: str = Form(..., min_length=6),
+    controller: AuthController = Depends(controller)
+):
+    return await controller.login(username, password)
+
+
+@router.post("/refresh-token")
+async def refresh_token(
+    request: Request,
+    refresh_token: str = Cookie(None),
+    controller: AuthController = Depends(controller)
+):
+    return await controller.refresh_token(refresh_token)
+
+
+@router.get("/me")
+@permission_required()
+async def user_me(request: Request):
+    user = getattr(request.state, "user", None)
+    return user
+
+
+@router.post("/logout")
+async def logout_user(
+    refresh_token: str = Cookie(None),
+    controller: AuthController = Depends(controller)
+):
+    if not refresh_token:
+        return res.unauthorized("Token mavjud emas")
+    return await controller.logout_user(refresh_token)

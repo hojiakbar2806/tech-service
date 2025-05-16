@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+*.env
+*.env.*
+
+# Byte-compiled / optimized / DLL files
+*.pyd
+*.dll
+*.dylib
+*.pyo
+
+# Test coverage
+.coverage
+htmlcov/
+.cache
+.tox/
+nosetests.xml
+coverage.xml
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# Pytest
+.pytest_cache/
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Poetry
+poetry.lock
+
+# Pipenv
+Pipfile.lock
+
+# Database
+*.sqlite3
+*.db
+
+# PyInstaller
+*.spec
+
+# FastAPI static/media/temp folders (if used)
+static/
+media/
+tmp/
+temp/
+
+# Jupyter Notebooks (optional)
+*.ipynb_checkpoints
+
+# Gunicorn logs (if using)
+gunicorn.log
