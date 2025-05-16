@@ -1,44 +1,51 @@
-import axios from "axios";
 import { useEffect } from "react";
 import { useSession } from "./useSession";
 import api from "@/lib/api";
+import { useNavigate } from "react-router-dom";
+import { isAxiosError } from "axios";
 
 const useApi = () => {
-    const { token, setToken, setUser } = useSession();
+    const { session, setSession } = useSession();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const requestInterceptor = api.interceptors.request.use(
-            async(config) => {
-                    config.headers.Authorization = `Bearer ${token}`;
+        let currentToken = session?.token;
 
+        const requestInterceptor = api.interceptors.request.use(
+            (config) => {
+                if (currentToken) {
+                    config.headers.Authorization = `Bearer ${currentToken}`;
+                }
                 return config;
             },
             (error) => Promise.reject(error)
         );
 
+        let isRefreshing = false;
+        
         const responseInterceptor = api.interceptors.response.use(
             (response) => response,
             async (error) => {
-                const originalRequest = error.config;
-
-                if (
-                    error.response?.status === 401 &&!originalRequest._retry
-                ) {
-                    originalRequest._retry = true;
+                if (isAxiosError(error) && error.response?.status === 401 && !isRefreshing && error.config) {
+                    isRefreshing = true;
+                    
                     try {
-                        const res = await api.get("/auth/refresh-token");
-                        setToken(res.data.access_token);
-                        if (res.status === 200) {
-                            const res = await api.get("/api/auth/me", {headers: {Authorization: `Bearer ${token}`}});
-                            setUser(res.data.user);
-                        }
-                    } catch {
-                        setToken(null);
-                        setUser(null);
-                        await axios.post("/api/auth/logout");
+                        const res = await api.post("/auth/refresh-token", null, { withCredentials: true });
+                        const newAccessToken = res.data.access_token;
+                        if (session)  setSession({ ...session, token: newAccessToken });
+                        currentToken = newAccessToken;
+                        const originalRequest = error.config;
+                        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                        isRefreshing = false;
+                        return api(originalRequest);
+                    } catch (refreshError) {
+                        isRefreshing = false;
+                        localStorage.clear();
+                        navigate("/auth/login");
+                        return Promise.reject(refreshError);
                     }
                 }
-
+                
                 return Promise.reject(error);
             }
         );
@@ -47,7 +54,7 @@ const useApi = () => {
             api.interceptors.request.eject(requestInterceptor);
             api.interceptors.response.eject(responseInterceptor);
         };
-    }, [token, setToken, setUser]);
+    }, [session, setSession, navigate]);
 
     return api;
 };

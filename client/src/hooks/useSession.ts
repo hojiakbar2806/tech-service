@@ -1,19 +1,26 @@
 import type { User } from '@/types/user';
-import {create} from 'zustand';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-export interface SessionState {
-    user: User | null;
-    token: string | null;
-    setToken: (token: string|null) => void;
-    setUser: (user: User|null) => void;
-    clearSession: () => void;
+interface SessionData {
+  user: User;
+  token: string;
 }
 
+export interface SessionState {
+  session: SessionData | null;
+  setSession: (session: SessionData | null) => void;
+}
 
-export const useSession = create<SessionState>((set) => ({
-  user: null,
-  token: null,
-  setToken: (token) => set({ token }),
-  setUser: (user) => set({ user }),
-  clearSession: () => set({ user: null, token: null }),
-}));
+export const useSession = create<SessionState>()(
+  persist(
+    (set) => ({
+      session: null,
+      setSession: (session) => set({ session }),
+    }),
+    {
+      name: 'session-storage', 
+      partialize: (state) => ({ session: state.session }), 
+    }
+  )
+);

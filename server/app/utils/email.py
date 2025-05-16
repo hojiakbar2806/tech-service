@@ -1,7 +1,6 @@
-import os
 import smtplib
-from email.message import EmailMessage
 from app.core.config import settings
+from email.message import EmailMessage
 from app.core.exceptions import EmailException
 
 

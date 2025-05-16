@@ -3,7 +3,7 @@ import { LaptopIcon,  User2Icon } from "lucide-react"
 import { Link } from "react-router"
 
 const ProfileNavbar = () => {
-    const { user } = useSession()
+    const { session } = useSession()
     return (
         <nav className="flex item-center justify-between px-6 py-4 border-b border-gray-300">
             <Link to="/" className="flex items-center space-x-2">
@@ -14,7 +14,7 @@ const ProfileNavbar = () => {
             <div className="flex gap-2">
 
                 <div className="flex items-center space-x-2">
-                    <h2>{user?.email}</h2>
+                    <h2>{session?.user.email}</h2>
                 </div>
 
                 <div className="rounded-full size-12 bg-primary grid place-items-center cursor-pointer">

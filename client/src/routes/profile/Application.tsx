@@ -37,7 +37,7 @@ const STATUS_OPTIONS = [
 export default function ApplicationsPage() {
     const apiClient = useApi()
     const { data = null, isLoading } = useQuery({
-        queryKey: ["accepted-applications"],
+        queryKey: ["my-applications"],
         queryFn: () => apiClient.get<Application[]>("/repair-requests/me"),
     })
 

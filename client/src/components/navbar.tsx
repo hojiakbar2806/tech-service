@@ -9,7 +9,7 @@ export function Navbar() {
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center">
                         <Link to="/" className="flex items-center space-x-2">
-                            <LaptopIcon className="h-6 w-6 text-primary" />
+                            <LaptopIcon className="size-10 text-primary" />
                             <span className="text-xl font-bold text-primary">TechService</span>
                         </Link>
                     </div>

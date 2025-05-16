@@ -2,7 +2,7 @@ from fastapi.security import HTTPBearer
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, repair_request, user, component
+from app.routers import auth, repair_request, user, component, notification
 from app.core.enums import TokenType
 from app.utils.auth import auth_service
 
@@ -15,6 +15,7 @@ app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(component.router)
 app.include_router(repair_request.router)
+app.include_router(notification.router)
 
 origins = [
     "http://localhost:3000",

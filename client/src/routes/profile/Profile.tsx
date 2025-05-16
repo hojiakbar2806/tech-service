@@ -75,7 +75,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4  gap-4">
         {stats.map((stat) => (
           <Card key={stat.title} className={`${stat.color} shadow-md`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

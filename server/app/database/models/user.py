@@ -26,3 +26,15 @@ class User(Base):
         back_populates="master",
         foreign_keys="[RepairRequest.master_id]"
     )
+
+    sent_notifications = relationship(
+        "Notification",
+        back_populates="sender",
+        foreign_keys="[Notification.sender_id]"
+    )
+
+    received_notifications = relationship(
+        "Notification",
+        back_populates="receiver",
+        foreign_keys="[Notification.receiver_id]"
+    )

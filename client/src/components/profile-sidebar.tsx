@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Link, useLocation, useNavigate } from 'react-router'
 import api from "@/lib/api"
 import toast from "react-hot-toast"
+import { useSession } from "@/hooks/useSession"
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
     items: {
@@ -14,19 +15,22 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export default function Sidebar({ items }: SidebarNavProps) {
-    const pathname = useLocation().pathname
+    const { pathname } = useLocation()
+    const { setSession } = useSession()
     const navigate = useNavigate()
+
     const handleLogout = async () => {
-        toast.promise(
+        await toast.promise(
             api.post("/auth/logout"),
             {
                 loading: "Kutilmoqda...",
-                success: () => {
-                    navigate("/")
-                    return "Chiqish muvaffaqiyatli amalga oshirildi"
-                }
-            }
+                success: "Chiqish muvaffaqiyatli amalga oshirildi",
+                error: "Chiqish muvaffaqiyatli amalga oshirilmadi"
+            },
         )
+        navigate("/")
+        setSession(null)
+        localStorage.clear()
     }
 
     return (

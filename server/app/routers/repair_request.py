@@ -16,7 +16,7 @@ async def controller(db: AsyncSession = Depends(get_async_session)):
 
 
 @router.post("")
-# @permission_required()
+@permission_required()
 async def new_repair_request(
     request: Request,
     data_in: RepairRequestCreate,
@@ -26,7 +26,7 @@ async def new_repair_request(
 
 
 @router.get("", response_model=List[RepairRequestResponse])
-# @permission_required()
+@permission_required()
 async def list_repair_requests(
     request: Request,
     controller: RepairRequestController = Depends(controller)
@@ -35,7 +35,7 @@ async def list_repair_requests(
 
 
 @router.get("/me", response_model=List[RepairRequestResponse])
-# @permission_required()
+@permission_required()
 async def list_my_repair_requests(
     request: Request,
     controller: RepairRequestController = Depends(controller)
@@ -44,7 +44,7 @@ async def list_my_repair_requests(
 
 
 @router.get("/{id}", response_model=RepairRequestResponse)
-# @permission_required([Roles.MANAGER, Roles.MASTER])
+@permission_required([Roles.MANAGER, Roles.MASTER])
 async def get_repair_request(
     id: int,
     request: Request,
@@ -54,7 +54,7 @@ async def get_repair_request(
 
 
 @router.patch("/{id}")
-# @permission_required([Roles.MANAGER, Roles.MASTER])
+@permission_required([Roles.MANAGER, Roles.MASTER])
 async def update_repair_request(
     id: int,
     request: Request,

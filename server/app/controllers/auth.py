@@ -94,7 +94,7 @@ class AuthController:
             db_user = await self.user_repo.get_user_by_id(payload)
             if not db_user:
                 raise HTTPException(
-                    status_code=404, detail="Foydalanuvchi topilmadi"
+                    status_code=401, detail="Foydalanuvchi topilmadi"
                 )
             token_data = UserResponse.model_validate(db_user).model_dump()
             access_token = auth_service.create_access_token(token_data)
@@ -107,7 +107,7 @@ class AuthController:
                 }
             )
         except JWTException as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=401, detail=str(e))
 
     async def logout_user(self, refresh_token: str) -> RedirectResponse:
         await self.auth_repo.add_token_blacklist(refresh_token, TokenType.REFRESH)
