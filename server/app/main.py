@@ -24,6 +24,8 @@ api.include_router(component.router)
 api.include_router(repair_request.router)
 api.include_router(notification.router)
 
+app.include_router(api)
+
 origins = [
     "https://computer-service.hojiakbar.me/",
 ]
