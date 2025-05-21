@@ -1,5 +1,5 @@
 from fastapi.security import HTTPBearer
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import auth, repair_request, user, component, notification
@@ -14,13 +14,15 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    )
+)
 
-app.include_router(auth.router)
-app.include_router(user.router)
-app.include_router(component.router)
-app.include_router(repair_request.router)
-app.include_router(notification.router)
+api = APIRouter(prefix="/api")
+
+api.include_router(auth.router)
+api.include_router(user.router)
+api.include_router(component.router)
+api.include_router(repair_request.router)
+api.include_router(notification.router)
 
 origins = [
     "https://computer-service.hojiakbar.me/",
