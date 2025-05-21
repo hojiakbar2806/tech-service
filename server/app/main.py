@@ -1,10 +1,14 @@
 from fastapi.security import HTTPBearer
-from fastapi import Depends, FastAPI, Request, APIRouter
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI, Request, APIRouter
 
-from app.routers import auth, repair_request, user, component, notification
 from app.core.enums import TokenType
 from app.utils.auth import auth_service
+from server.app.database.models.user import User
+from server.app.database.session import get_async_session
+from app.routers import auth, repair_request, user, component, notification
+
 
 
 oauth2_scheme = HTTPBearer(auto_error=False)
@@ -17,6 +21,18 @@ app = FastAPI(
 )
 
 api = APIRouter(prefix="/api")
+
+api.post("/create-manager")
+async def create_manager(db: AsyncSession = Depends(get_async_session)):
+    new_user = User(
+        name="Manager",
+        email="admin@gmail.com",
+        password="admin",
+        role="manager",
+    )
+    db.add(new_user)
+    await db.commit()
+    return {"message": "Manager yaratildi"}
 
 api.include_router(auth.router)
 api.include_router(user.router)
