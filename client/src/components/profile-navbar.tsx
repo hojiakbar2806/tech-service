@@ -1,28 +1,17 @@
-import { useSession } from "@/hooks/useSession"
-import { LaptopIcon,  User2Icon } from "lucide-react"
-import { Link } from "react-router"
+import { UserDropdown } from "./user-drop-down"
 
 const ProfileNavbar = () => {
-    const { session } = useSession()
     return (
-        <nav className="flex item-center justify-between px-6 py-4 border-b border-gray-300">
-            <Link to="/" className="flex items-center space-x-2">
-                <LaptopIcon className="size-8 text-primary" />
-                <span className="text-xl font-bold text-primary">TechService</span>
-            </Link>
-
-            <div className="flex gap-2">
-
-                <div className="flex items-center space-x-2">
-                    <h2>{session?.user.email}</h2>
+        <header className="bg-white shadow">
+            <div className="mx-auto flex items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                <div className="flex items-center">
+                    <a href="/" className="flex items-center">
+                        <span className="text-xl font-bold text-green-600">DernSupport</span>
+                    </a>
                 </div>
-
-                <div className="rounded-full size-12 bg-primary grid place-items-center cursor-pointer">
-                    <User2Icon className="text-white" />
-                </div>
-
+                <UserDropdown />
             </div>
-        </nav>
+        </header>
     )
 }
 

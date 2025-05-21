@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Cookie, Depends, Form, Request
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
 
 from app.controllers.auth import AuthController
 from app.database.session import get_async_session
 from app.core.permission import permission_required
-from app.utils.response import response as res
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -57,5 +56,5 @@ async def logout_user(
     controller: AuthController = Depends(controller)
 ):
     if not refresh_token:
-        return res.unauthorized("Token mavjud emas")
+        return HTTPException(status_code=400, detail="Refresh token not found")
     return await controller.logout_user(refresh_token)

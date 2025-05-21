@@ -21,6 +21,7 @@ class IssueType(str, Enum):
 
 class RequestStatus(str, Enum):
     CREATED = "created"
+    CHECKED = "checked"
     APPROVED = "approved"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"

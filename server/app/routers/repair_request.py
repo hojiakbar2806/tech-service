@@ -1,12 +1,14 @@
 from typing import List
 from fastapi import APIRouter, Request, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
 from app.core.enums import Roles
+from app.core.enums import RequestStatus
 from app.database.session import get_async_session
 from app.core.permission import permission_required
 from app.controllers.repair_request import RepairRequestController
-from app.schemas.repair_request import RepairRequestResponse, RepairRequestCreate, RepairRequestUpdate
+from app.schemas.repair_request import RepairRequestResponse, RepairRequestCreate, RepairRequestUpdate, PersonalizedRepairRequest
 
 router = APIRouter(prefix="/repair-requests", tags=["Repair Requests"])
 
@@ -29,9 +31,10 @@ async def new_repair_request(
 @permission_required()
 async def list_repair_requests(
     request: Request,
+    status: Optional[RequestStatus] = None,
     controller: RepairRequestController = Depends(controller)
 ):
-    return await controller.get_all()
+    return await controller.get_all(status)
 
 
 @router.get("/me", response_model=List[RepairRequestResponse])
@@ -41,6 +44,15 @@ async def list_my_repair_requests(
     controller: RepairRequestController = Depends(controller)
 ):
     return await controller.get_my_repair_requests(request)
+
+
+@router.get("/master", response_model=List[RepairRequestResponse])
+@permission_required([Roles.MASTER])
+async def list_master_repair_requests(
+    request: Request,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.get_master_repair_requests(request)
 
 
 @router.get("/{id}", response_model=RepairRequestResponse)
@@ -62,3 +74,54 @@ async def update_repair_request(
     controller: RepairRequestController = Depends(controller)
 ):
     return await controller.partial_update(id, data_in)
+
+
+@router.post("/{id}/as-checked")
+@permission_required([Roles.MANAGER])
+async def set_as_checking(
+    id: int,
+    request: Request,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.set_as_checked(id, request)
+
+
+@router.post("/{id}/as-rejected")
+@permission_required([Roles.MANAGER])
+async def set_as_rejected(
+    id: int,
+    request: Request,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.set_as_rejected(id, request)
+
+
+@router.post("/{id}/as-in-progress")
+@permission_required([Roles.USER])
+async def set_as_rejected(
+    id: int,
+    request: Request,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.set_as_in_progress(id, request)
+
+
+@router.patch("/{id}/as-approved")
+@permission_required([Roles.USER])
+async def set_as_approved(
+    id: int,
+    request: Request,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.set_as_approved(id, request)
+
+
+@router.patch("/{id}/personalize-order")
+@permission_required([Roles.MASTER])
+async def set_as_completed(
+    id: int,
+    request: Request,
+    data_in: PersonalizedRepairRequest,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.personalize_order(id, data_in, request)

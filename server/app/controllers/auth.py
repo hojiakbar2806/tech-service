@@ -39,7 +39,7 @@ class AuthController:
         try:
             token_in_blacklist = await self.auth_repo.check_token_blacklist(token)
             if token_in_blacklist:
-                return res.unauthorized("Token yaroqsiz")
+                return HTTPException(status_code=400,detail="Token allaqchon ishlatilgan")
 
             # await self.auth_repo.add_token_blacklist(token, TokenType.ONE_TIME)
 
@@ -58,11 +58,11 @@ class AuthController:
                 value=refresh_token,
                 httponly=True,
                 secure=True,
-                samesite="none"
+                samesite="strict"
             )
             return response
         except JWTException as e:
-            raise res.unauthorized(str(e))
+            raise HTTPException(status_code=400, detail=str(e))
 
     async def login(self, username: str, password: str) -> dict:
         user = await self.user_repo.get_by_email(username)
@@ -81,11 +81,12 @@ class AuthController:
             }
         )
         response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            samesite="none"
-        )
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="strict"
+            )
         return response
 
     async def refresh_token(self, token: str) -> dict:

@@ -1,108 +1,191 @@
-import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, CheckCheck, InfoIcon } from "lucide-react";
-import api from "@/lib/api";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import { isAxiosError } from "axios";
 import toast from "react-hot-toast";
 
+import api from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon, Mail, Lock, ArrowRight } from 'lucide-react';
+import { SiteHeader } from "@/components/site-header";
+
+const schema = z.object({
+    method: z.enum(["link", "password"]),
+    email: z.string().min(1, "Email kerak").email("Email noto'g'ri"),
+    password: z.string().optional()
+});
+
+type FormValues = z.infer<typeof schema>;
+
 export default function LoginPage() {
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
+    const [method, setMethod] = useState<"link" | "password">("link");
+    const navigate = useNavigate();
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
-        const email = (e.target as HTMLFormElement).email.value.trim();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        setValue,
+    } = useForm<FormValues>({
+        resolver: zodResolver(schema),
+        defaultValues: { method: "link" }
+    });
 
-        if (!email) {
-            toast.error("Iltimos, email manzilini kiriting.");
-            return;
+    const loginMutation = useMutation({
+        mutationFn: async (formData: FormData) =>
+            await api.post("/auth/login", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+        onSuccess: () => {
+            toast.success("Muvaffaqiyatli kirildi.");
+            navigate("/dashboard");
+        },
+        onError: (err) => {
+            if (isAxiosError(err)) toast.error(err?.response?.data?.detail);
+            else toast.error("Kirishda xatolik yuz berdi");
         }
+    });
 
+    const sendLinkMutation = useMutation({
+        mutationFn: async (formData: FormData) =>
+            await api.post("/auth/send-auth-link", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+        onSuccess: () => {
+            toast.success("Link yuborildi!");
+        },
+        onError: (err) => {
+            if (isAxiosError(err)) toast.error(err?.response?.data?.detail);
+            else toast.error("Link yuborishda xatolik yuz berdi");
+        }
+    });
+
+    const onSubmit = (data: FormValues) => {
         const formData = new FormData();
-        formData.append("email", email);
+        console.log(data)
+        if (data.method === "link") {
+            formData.append("email", data.email);
+            sendLinkMutation.mutate(formData);
 
-        setLoading(true);
-
-        try {
-            await toast.promise(
-                api.post("/auth/send-auth-link", formData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                }),
-                {
-                    loading: "Yuborilmoqda...",
-                    success: "Kirish linki emailingizga yuborildi.",
-                    error: "Email yuborishda xatolik yuz berdi.",
-                }
-            );
-            setError("");
-            setMessage("");
-
-            setMessage("Biz sizga kirish uchun link yubordik. Iltimos, emailingizni tekshiring.");
-        } catch (err) {
-            if (isAxiosError(err)) {
-                setError(err.response?.data?.detail || "Tizimda xatolik yuz berdi.");
-            } else {
-                setError("Noma’lum xatolik yuz berdi.");
-            }
-        } finally {
-            setLoading(false);
+        } else {
+            formData.append("username", data.email);
+            formData.append("password", data.password || "");
+            loginMutation.mutate(formData);
         }
-    }
+    };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-muted px-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="text-2xl font-bold">Kirish</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email manzilingiz</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                placeholder="email@example.com"
-                                disabled={loading}
-                            />
-                        </div>
-                        <Button type="submit" className="w-full cursor-pointer" disabled={loading}>
-                            {loading ? "Yuborilmoqda..." : "Kirish linkini olish"}
-                        </Button>
-                    </form>
+        <>
+            <SiteHeader />
+            <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+                <div className="w-full max-w-md">
+                    <Card className="w-full shadow-xl border-0 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl" />
 
-                    {message && (
-                        <Alert variant="success" className="mt-4">
-                            <CheckCheck className="row-span-2" />
-                            <AlertTitle>Muvaffaqiyatli!</AlertTitle>
-                            <AlertDescription>{message}</AlertDescription>
-                        </Alert>
-                    )}
+                        <CardTitle className="text-2xl font-bold text-center">Kirish</CardTitle>
 
-                    {error && (
-                        <Alert variant="error" className="mt-4">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Xatolik!</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-                    {(!message && !error) &&
-                        <Alert variant="info" className="mt-4">
-                            <InfoIcon className="h-4 w-4" />
-                            <AlertTitle>Info!</AlertTitle>
-                            <AlertDescription>
-                                Biz sizning emailingizga shaxsiy kabinetingizga kirish uchun link yuboramiz.
-                                Iltimos to'g'ri email manzilini kiriting.
-                            </AlertDescription>
-                        </Alert>}
-                </CardContent>
-            </Card>
-        </div>
+                        <CardContent className="relative space-y-6">
+                            <div className="w-full flex justify-center gap-2 p-1 bg-muted rounded-lg">
+                                <Button
+                                    type="button"
+                                    variant={method === "link" ? "default" : "ghost"}
+                                    className={`flex-1 cursor-pointer rounded-md transition-all duration-300 ${method === "link" ? "shadow-sm" : ""}`}
+                                    onClick={() => {
+                                        setValue("method", "link")
+                                        setMethod("link")
+                                    }}
+                                >
+                                    Link bilan
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={method === "password" ? "default" : "ghost"}
+                                    className={`flex-1 cursor-pointer rounded-md transition-all duration-300 ${method === "password" ? "shadow-sm" : ""}`}
+                                    onClick={() => {
+                                        setValue("method", "password")
+                                        setMethod("password")
+                                    }}
+                                >
+                                    Parol bilan
+                                </Button>
+                            </div>
+
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email" className="text-sm font-medium">
+                                        Email manzil
+                                    </Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            className="pl-10 h-11 border-muted-foreground/20 focus-visible:ring-primary/50"
+                                            placeholder="email@example.com"
+                                            {...register("email")}
+                                        />
+                                    </div>
+                                    {errors.email && (
+                                        <p className="text-sm text-destructive mt-1 animate-fadeIn">{errors.email.message}</p>
+                                    )}
+                                </div>
+
+                                {method === "password" && (
+                                    <div className="space-y-2 animate-fadeIn">
+                                        <Label htmlFor="password" className="text-sm font-medium">
+                                            Parol
+                                        </Label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                            <Input
+                                                id="password"
+                                                type="password"
+                                                className="pl-10 h-11 border-muted-foreground/20 focus-visible:ring-primary/50"
+                                                placeholder="********"
+                                                {...register("password", {
+                                                    required: method === "password" ? "Parol kerak" : false
+                                                })}
+                                            />
+                                        </div>
+                                        {errors.password && (
+                                            <p className="text-sm text-destructive mt-1 animate-fadeIn">{errors.password.message}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 shadow-md hover:shadow-lg"
+                                    disabled={loginMutation.isPending || sendLinkMutation.isPending}
+                                >
+                                    {(method === "password"
+                                        ? loginMutation.isPending
+                                        : sendLinkMutation.isPending)
+                                        ? "Yuborilmoqda..."
+                                        : (
+                                            <span className="flex items-center justify-center gap-2">
+                                                Kirish <ArrowRight className="h-4 w-4" />
+                                            </span>
+                                        )}
+                                </Button>
+                            </form>
+
+                            {method === "link" && (
+                                <Alert variant="default" className="mt-4 bg-blue-50 text-blue-800 border-blue-200">
+                                    <InfoIcon className="h-4 w-4 text-blue-500" />
+                                    <AlertTitle className="text-blue-700 font-medium">Eslatma!</AlertTitle>
+                                    <AlertDescription className="text-blue-600">
+                                        Siz kiritgan emailingizga kirish havolasi yuboriladi. Iltimos, to'g'ri manzil kiriting.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </>
     );
 }

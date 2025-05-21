@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.enums import Roles
@@ -31,9 +32,16 @@ class UserRepository:
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_master_users(self) -> list[User]:
+        stmt = select(User).where(User.role == Roles.MASTER)
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
-    async def get_all_users(self) -> list[User]:
+    async def get_all_users(self, role: Optional[Roles]=None) -> list[User]:
         query = select(User)
+        if role:
+            query = query.where(User.role == role)
         result = await self.db.execute(query)
         return result.scalars().all()
     

@@ -2,22 +2,25 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import useApi from "@/hooks/useApi"
 import type { User } from "@/types/user"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-    BadgeAlert, BadgeInfo, Info, Laptop, MapPin, UserIcon,
+    BadgeAlert, BadgeInfo, DollarSign, Info, Laptop, MapPin, UserIcon,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import toast from "react-hot-toast"
 
 interface Application {
-    id: string
+    id: number
     device_model: string
     issue_type: string
     problem_area: string
+    price: number
     description: string
     location: string
     status: string
@@ -26,7 +29,6 @@ interface Application {
 }
 
 const STATUS_OPTIONS = [
-    { value: "All", label: "Barchasi" },
     { value: "created", label: "Yaratilgan" },
     { value: "approved", label: "Tasdiqlangan" },
     { value: "in_progress", label: "Jarayonda" },
@@ -35,25 +37,36 @@ const STATUS_OPTIONS = [
 ]
 
 export default function ApplicationsPage() {
-    const apiClient = useApi()
-    const { data = null, isLoading } = useQuery({
+    const api = useApi()
+    const { data = null, isLoading, refetch } = useQuery({
         queryKey: ["my-applications"],
-        queryFn: () => apiClient.get<Application[]>("/repair-requests/me"),
+        queryFn: () => api.get<Application[]>("/repair-requests/me"),
     })
 
-    const [statusFilter, setStatusFilter] = useState("")
+    const approve = useMutation({
+        mutationFn: (id: number) => api.post(`/repair-requests/${id}/as-in-progress`),
+    })
+    const reject = useMutation({
+        mutationFn: (id: number) => api.post(`/repair-requests/${id}/as-rejected`),
+    })
 
-    const filteredApps = data?.data.filter((app) =>
-        statusFilter ? app.status === statusFilter|| statusFilter === "All" : true
+    const [statusFilter, setStatusFilter] = useState("approved")
+
+    const filteredApps = data?.data.filter((app) => statusFilter ? app.status === statusFilter : true
     ) ?? []
+
+    const handleApprove = async (id: number) => {
+        await approve.mutateAsync(id)
+        await refetch()
+    }
 
     return (
         <>
             <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 className="text-2xl font-bold">Sizning Murojatlaringiz</h2>
                 <Select onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Status bo‘yicha filtrlash" />
+                    <SelectTrigger >
+                        <SelectValue placeholder="Filter" />
                     </SelectTrigger>
                     <SelectContent>
                         {STATUS_OPTIONS.map((opt) => (
@@ -136,6 +149,12 @@ export default function ApplicationsPage() {
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <DollarSign className="w-4 h-4 text-muted-foreground" />
+                                    <span>
+                                        <span className="font-medium">Price:</span> {app.price ?? "Qo'yilmagan"}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-muted-foreground" />
                                     <span>
                                         <span className="font-medium">Joylashuv:</span> {app.location}
@@ -143,9 +162,17 @@ export default function ApplicationsPage() {
                                 </div>
                                 <div className="pt-2 border-t mt-2">
                                     <span className="block font-medium mb-1">Tavsif:</span>
-                                    <blockquote className="text-muted-foreground text-sm italic border-l-4 pl-3 border-muted">
-                                        {app.description}
-                                    </blockquote>
+                                    <div className="flex justify-between gap-2" >
+                                        <blockquote className="text-muted-foreground text-sm italic border-l-4 pl-3 border-muted">
+                                            {app.description}
+                                        </blockquote>
+                                        {app.status === "approved" && (
+                                            <Button variant="default" size="sm" disabled={approve.isPending} className="cursor-pointer hover:bg-primary/60 active:bg-primary"
+                                                onClick={() => handleApprove(app.id)}>
+                                                {approve.isPending ? "Kutib turing..." : "Tasdiqlash"}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

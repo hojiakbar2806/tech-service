@@ -95,39 +95,44 @@ export default function ProfilePage() {
       </div>
 
       <div className="border rounded-md overflow-hidden">
-        <Table>
-          <TableHeader className="bg-primary/10">
-            <TableRow>
-              <TableHead>Model</TableHead>
-              <TableHead>Joylashuv</TableHead>
-              <TableHead>Sana</TableHead>
-              <TableHead>Taxminiy tugash</TableHead>
-              <TableHead>Tugash sanasi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {inProgressApps.map((app) => (
-              <TableRow key={app.id}>
-                <TableCell>{app.device_model}</TableCell>
-                <TableCell>{app.location}</TableCell>
-                <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  {app.estimated_completion
-                    ? formatDuration(app.estimated_completion)
-                    : "Belgilanmagan"}
-                </TableCell>
-                <TableCell>{new Date(app.end_time).toLocaleDateString()}</TableCell>
-              </TableRow>
-            ))}
-            {inProgressApps.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  Hozircha jarayondagi murojaatlar yo‘q
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        {
+          isLoading ? (
+            <div className="p-4">Loading...</div>
+          ) :
+            inProgressApps.length > 0 ? (
+              <Table>
+                <TableHeader className="bg-primary/10">
+                  <TableRow>
+                    <TableHead>Model</TableHead>
+                    <TableHead>Joylashuv</TableHead>
+                    <TableHead>Sana</TableHead>
+                    <TableHead>Taxminiy tugash</TableHead>
+                    <TableHead>Tugash sanasi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inProgressApps.map((app) => (
+                    <TableRow key={app.id}>
+                      <TableCell>{app.device_model}</TableCell>
+                      <TableCell>{app.location}</TableCell>
+                      <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {app.estimated_completion
+                          ? formatDuration(app.estimated_completion)
+                          : "Belgilanmagan"}
+                      </TableCell>
+                      <TableCell>{new Date(app.end_time).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) :
+              (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Jarayonda murojaatlar mavjud emas
+                </div>
+              )
+        }
       </div>
     </div>
   )

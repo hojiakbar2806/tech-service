@@ -1,9 +1,8 @@
 from functools import wraps
-from fastapi import Request
+from fastapi import HTTPException, Request
 from typing import Optional, Union, List
 
 from app.core.enums import Roles
-from app.utils.response import response as res
 
 
 def permission_required(roles: Optional[Union[Roles, List[Roles]]] = None):
@@ -12,17 +11,17 @@ def permission_required(roles: Optional[Union[Roles, List[Roles]]] = None):
         async def wrapper(*args, **kwargs):
             request: Request = kwargs.get("request")
             if not request:
-                raise res.interval("Request topilmadi")
+                raise HTTPException(status_code=400, detail="Request not found")
 
             user = getattr(request.state, "user", None)
 
             if user is None:
-                raise res.unauthorized("Ro'yxatdan o'tmagansiz")
+                raise HTTPException(status_code=401, detail="Unauthorized")
 
             if roles:
                 allowed_roles = roles if isinstance(roles, list) else [roles]
                 if user.get("role") not in allowed_roles:
-                    raise res.forbidden("Sizda ruxsat yo'q")
+                    raise HTTPException(status_code=403, detail="Forbidden")
 
             return await func(*args, **kwargs)
 

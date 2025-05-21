@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,9 +29,10 @@ async def create_user(
 # @permission_required(Roles.MANAGER)
 async def list_users(
         request: Request,
+        role: Optional[Roles]=None,
         controller: UserController = Depends(controller)
 ):
-    return await controller.get_all_users()
+    return await controller.get_all_users(role)
 
 
 @router.patch("/{user_id}")
@@ -38,7 +40,7 @@ async def list_users(
 async def update_user(
         user_id: int,
         request: Request,
-        role: Roles,
+        role: Optional[Roles]=None,
         controller: UserController = Depends(controller)
 ):
     return await controller.update_user_role(user_id, role)

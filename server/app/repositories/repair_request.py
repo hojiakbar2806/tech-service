@@ -6,6 +6,8 @@ from app.core.exceptions import ResourceNotFoundException
 from app.database.models.repair_request import RepairRequest
 from sqlalchemy.orm import selectinload
 
+from app.core.enums import RequestStatus
+
 
 class RepairRequestRepository:
     def __init__(self, db: Session):
@@ -23,7 +25,8 @@ class RepairRequestRepository:
         stmt = select(RepairRequest).where(
             RepairRequest.id == id
         ).options(
-            selectinload(RepairRequest.master)
+            selectinload(RepairRequest.master),
+            selectinload(RepairRequest.owner)
         )
         result = await self.db.execute(stmt)
         db_request = result.scalar_one_or_none()
@@ -31,10 +34,13 @@ class RepairRequestRepository:
             raise ResourceNotFoundException("RepairRequest", id)
         return db_request
 
-    async def get_all(self) -> list[RepairRequest]:
+    async def get_all(self, status: Optional[RequestStatus] = None) -> list[RepairRequest]:
         stmt = select(RepairRequest).options(
-            selectinload(RepairRequest.master)
-        )
+            selectinload(RepairRequest.master),
+            selectinload(RepairRequest.owner)
+        ).order_by(RepairRequest.created_at.desc())
+        if status:
+            stmt = stmt.where(RepairRequest.status == status)
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
@@ -42,8 +48,19 @@ class RepairRequestRepository:
         stmt = select(RepairRequest).where(
             RepairRequest.owner_id == owner_id
         ).options(
-            selectinload(RepairRequest.master)
-        )
+            selectinload(RepairRequest.master),
+            selectinload(RepairRequest.owner)
+        ).order_by(RepairRequest.created_at.desc())
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def get_by_master_id(self, master_id: int) -> list[RepairRequest]:
+        stmt = select(RepairRequest).where(
+            RepairRequest.master_id == master_id
+        ).options(
+            selectinload(RepairRequest.master),
+            selectinload(RepairRequest.owner)
+        ).order_by(RepairRequest.created_at.desc())
         result = await self.db.execute(stmt)
         return result.scalars().all()
 

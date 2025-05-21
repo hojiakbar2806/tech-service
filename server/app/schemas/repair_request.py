@@ -13,6 +13,10 @@ class RepairRequestCreate(BaseModel):
     description: str
     location: str
 
+class PersonalizedRepairRequest(BaseModel):
+    end_time: datetime
+    price: float
+
 
 class RepairRequestUpdate(BaseModel):
     master_id: Optional[int] = None
@@ -32,6 +36,7 @@ class RepairRequestResponse(BaseModel):
     location: str
     price: Optional[float] = None
     master: Optional[UserResponse] = None
+    owner:Optional[UserResponse] = None
     status: RequestStatus
     end_time: Optional[datetime] = None
     estimated_completion: Optional[int] = None

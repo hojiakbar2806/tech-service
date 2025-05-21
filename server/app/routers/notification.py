@@ -27,7 +27,25 @@ async def list_components(
 @permission_required()
 async def list_components(
     request: Request,
-    data_in:NotificationCreate,
+    data_in: NotificationCreate,
     controller: NotificationController = Depends(controller),
 ):
-    return await controller.send_notification(data_in,request)
+    return await controller.send_notification(data_in, request)
+
+
+@router.post("/send")
+async def send_notification(
+    request: Request,
+    data_in: NotificationCreate,
+    controller: NotificationController = Depends(controller),
+):
+    return await controller.send_notification(data_in, request)
+
+
+@router.post("/as-read")
+async def send_notification(
+    request: Request,
+    data_in: List[int],
+    controller: NotificationController = Depends(controller),
+):
+    return await controller.set_as_read(data_in)
