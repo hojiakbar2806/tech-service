@@ -1,21 +1,19 @@
-FROM node:20 AS build
+FROM node:latest AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json* ./
+
 RUN npm install
 
 COPY . .
+
 RUN npm run build
 
-FROM node:20 AS production
+FROM nginx:stable-alpine
 
-WORKDIR /app
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-RUN npm install -g serve
+EXPOSE 80
 
-COPY --from=build /app/build ./build
-
-EXPOSE 3000
-
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["nginx", "-g", "daemon off;"]
