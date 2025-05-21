@@ -13,7 +13,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import toast from "react-hot-toast"
 
 interface Application {
     id: number
@@ -45,9 +44,6 @@ export default function ApplicationsPage() {
 
     const approve = useMutation({
         mutationFn: (id: number) => api.post(`/repair-requests/${id}/as-in-progress`),
-    })
-    const reject = useMutation({
-        mutationFn: (id: number) => api.post(`/repair-requests/${id}/as-rejected`),
     })
 
     const [statusFilter, setStatusFilter] = useState("approved")

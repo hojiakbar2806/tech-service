@@ -1,4 +1,3 @@
-import { navlinks } from '@/lib/const'
 import ProfileNavbar from '@/components/profile-navbar'
 import ProfileSidebar from '@/components/sidebar'
 import { Outlet } from 'react-router'
@@ -10,7 +9,7 @@ const ProfileLayout = () => {
             <div className='min-h-screen flex flex-col'>
                 <ProfileNavbar />
                 <div className='flex-1 flex w-full'>
-                    <ProfileSidebar items={navlinks["user"]} />
+                    <ProfileSidebar />
                     <div className='flex-1 flex flex-col w-full p-5'>
                         <Outlet />
                     </div>

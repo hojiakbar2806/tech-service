@@ -20,7 +20,7 @@ services:
 
   computer_service_frontend:
     build:
-      context: ./client  
+      context: ./client
       dockerfile: Dockerfile
     expose:
       - "3000"
