@@ -22,7 +22,7 @@ app = FastAPI(
 
 api = APIRouter(prefix="/api")
 
-api.post("/create-manager")
+api.get("/create-manager")
 async def create_manager(db: AsyncSession = Depends(get_async_session)):
     new_user = User(
         name="Manager",
