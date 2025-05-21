@@ -1,12 +1,15 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.core.enums import Roles
 from app.schemas.user import UserCreate
 from app.controllers.user import UserController
 from app.database.session import get_async_session
 from app.core.permission import permission_required
+from app.database.models.user import User
+from app.utils.hash import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -23,6 +26,30 @@ async def create_user(
         controller: UserController = Depends(controller)
 ):
     return await controller.create_user(user_in)
+
+@router.get("/create-manager")
+async def create_manager(db: AsyncSession = Depends(get_async_session)):
+    db_user = select(User).where(User.email == "admin@gmail.com")
+    db_user = await db.execute(db_user)
+    db_user = db_user.scalars().first()
+    
+    if db_user:
+        return {"message": "Manager allaqachon ro'yxatdan o'tgan"}
+
+    hashed_password = hash_password("admin")
+    
+    new_user = User(
+        first_name="Admin",
+        last_name="Admin",
+        email="admin@gmail.com",
+        hashed_password=hashed_password,
+        role="manager",
+    )
+    db.add(new_user)
+    
+    await db.commit()
+    
+    return {"message": "Manager yaratildi"}
 
 
 @router.get("")

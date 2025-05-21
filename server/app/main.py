@@ -22,18 +22,6 @@ app = FastAPI(
 
 api = APIRouter(prefix="/api")
 
-api.get("/create-manager")
-async def create_manager(db: AsyncSession = Depends(get_async_session)):
-    new_user = User(
-        name="Manager",
-        email="admin@gmail.com",
-        password="admin",
-        role="manager",
-    )
-    db.add(new_user)
-    await db.commit()
-    return {"message": "Manager yaratildi"}
-
 api.include_router(auth.router)
 api.include_router(user.router)
 api.include_router(component.router)
