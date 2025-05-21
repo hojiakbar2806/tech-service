@@ -9,7 +9,12 @@ from app.utils.auth import auth_service
 
 oauth2_scheme = HTTPBearer(auto_error=False)
 
-app = FastAPI(dependencies=[Depends(oauth2_scheme)])
+app = FastAPI(
+    dependencies=[Depends(oauth2_scheme)],
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    )
 
 app.include_router(auth.router)
 app.include_router(user.router)
@@ -18,8 +23,7 @@ app.include_router(repair_request.router)
 app.include_router(notification.router)
 
 origins = [
-    "http://localhost:3000",
-    "http://api.localhost:8000",
+    "https://computer-service.hojiakbar.me/",
 ]
 
 app.add_middleware(
