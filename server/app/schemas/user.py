@@ -9,7 +9,7 @@ class UserCreate(BaseModel):
     first_name: str = Field(..., min_length=2)
     last_name: str = Field(..., min_length=2)
     email: str = Field(...)
-    hashed_password: str = Field(..., min_length=6, alias="password")
+    hashed_password: str = Field(..., alias="password")
     role: Optional[Roles]
 
 
@@ -17,7 +17,7 @@ class UserUpdate(BaseModel):
     first_name: str = Field(None, min_length=2)
     last_name: str = Field(None, min_length=2)
     email: str = Field(None)
-    hashed_password: str = Field(None, min_length=8, alias="password")
+    hashed_password: str = Field(None, alias="password")
 
 
 class UserResponse(BaseModel):
