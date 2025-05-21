@@ -5,8 +5,8 @@ from fastapi import Depends, FastAPI, Request, APIRouter
 
 from app.core.enums import TokenType
 from app.utils.auth import auth_service
-from server.app.database.models.user import User
-from server.app.database.session import get_async_session
+from app.database.models.user import User
+from app.database.session import get_async_session
 from app.routers import auth, repair_request, user, component, notification
 
 
