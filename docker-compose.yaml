@@ -5,11 +5,10 @@ networks:
     external: true
 
 services:
-  backend:
+  computer_service_backend:
     build:
       context: ./server  
       dockerfile: Dockerfile  
-    container_name: computer_service_backend
     command: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     env_file:
       - .env
@@ -19,11 +18,10 @@ services:
       - computer_service_network
       - database_network
 
-  frontend:
+  computer_service_frontend:
     build:
       context: ./client  
       dockerfile: Dockerfile
-    container_name: computer_service_frontend
     expose:
       - "3000"
     env_file:
@@ -31,9 +29,8 @@ services:
     networks:
       - computer_service_network
 
-  nginx:
+  computer_service_nginx:
     image: nginx:latest
-    container_name: computer_service_nginx
     depends_on:
       - frontend
       - backend
