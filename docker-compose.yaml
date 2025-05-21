@@ -32,8 +32,8 @@ services:
   computer_service_nginx:
     image: nginx:latest
     depends_on:
-      - frontend
-      - backend
+      - computer_service_backend
+      - computer_service_frontend
     ports:
       - "88:80"
     volumes:
