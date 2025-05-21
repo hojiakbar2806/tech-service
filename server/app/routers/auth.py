@@ -27,8 +27,8 @@ async def verify_auth_link(token: str, controller: AuthController = Depends(cont
 
 @router.post("/login")
 async def login_user(
-    username: str = Form(..., min_length=3),
-    password: str = Form(..., min_length=6),
+    username: str = Form(..., min_length=4),
+    password: str = Form(..., min_length=4),
     controller: AuthController = Depends(controller)
 ):
     return await controller.login(username, password)
