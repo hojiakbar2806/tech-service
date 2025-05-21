@@ -21,6 +21,7 @@ services:
   computer_service_frontend:
     build:
       context: ./client
+      dockerfile: Dockerfile
     command: npm run build
     volumes:
       - frontend_build:/app/dist
