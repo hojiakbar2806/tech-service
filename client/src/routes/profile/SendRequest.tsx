@@ -26,7 +26,7 @@ type FormData = z.infer<typeof schema>
 export default function SendRequestPage() {
     const api = useApi()
 
-    const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) })
+    const { control, register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
 
     const mutation = useMutation({
         mutationFn: (data: FormData) => api.post("/repair-requests", data),
@@ -65,7 +65,6 @@ export default function SendRequestPage() {
                                 id="device_model"
                                 placeholder="Masalan: MacBook Pro 2021"
                                 {...register("device_model")}
-                                disabled={isSubmitting}
                             />
                             {errors.device_model && <p className="text-red-600 text-sm">{errors.device_model.message}</p>}
                         </div>
@@ -99,7 +98,6 @@ export default function SendRequestPage() {
                                 id="problem_area"
                                 placeholder="Masalan: Displey, Klaviatura"
                                 {...register("problem_area")}
-                                disabled={isSubmitting}
                             />
                             {errors.problem_area && <p className="text-red-600 text-sm">{errors.problem_area.message}</p>}
                         </div>
@@ -111,7 +109,6 @@ export default function SendRequestPage() {
                                 placeholder="Muammo haqida batafsil yozing"
                                 className="min-h-[120px]"
                                 {...register("description")}
-                                disabled={isSubmitting}
                             />
                             {errors.description && <p className="text-red-600 text-sm">{errors.description.message}</p>}
                         </div>
@@ -122,13 +119,12 @@ export default function SendRequestPage() {
                                 id="location"
                                 placeholder="Masalan: Ofis 101"
                                 {...register("location")}
-                                disabled={isSubmitting}
                             />
                             {errors.location && <p className="text-red-600 text-sm">{errors.location.message}</p>}
                         </div>
 
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Yuborilmoqda..." : "So'rov yuborish"}
+                        <Button type="submit" disabled={mutation.isPending} className="cursor-pointer">
+                            {mutation.isPending ? "Yuborilmoqda..." : "So'rov yuborish"}
                         </Button>
                     </CardContent>
                 </form>

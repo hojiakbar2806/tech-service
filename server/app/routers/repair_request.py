@@ -55,6 +55,25 @@ async def list_master_repair_requests(
     return await controller.get_master_repair_requests(request)
 
 
+@router.patch("/{id}/as-completed")
+@permission_required([Roles.MASTER])
+async def set_as_completed(
+    id: int,
+    request: Request,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.set_as_completed(id)
+
+
+@router.post("/{email}/create")
+async def create_repair_request(
+    email: str,
+    data_in: RepairRequestCreate,
+    controller: RepairRequestController = Depends(controller)
+):
+    return await controller.create_request_by_email(email, data_in)
+
+
 @router.get("/{id}", response_model=RepairRequestResponse)
 @permission_required([Roles.MANAGER, Roles.MASTER])
 async def get_repair_request(

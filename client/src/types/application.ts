@@ -7,6 +7,8 @@ export interface Application {
     problem_area: string
     price: number
     description: string
+    estimated_completion: number
+    end_time: string
     location: string
     status: string
     created_at: string

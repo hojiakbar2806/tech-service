@@ -20,6 +20,14 @@ class UserUpdate(BaseModel):
     hashed_password: str = Field(None, alias="password")
 
 
+class PartialUpdateUser(BaseModel):
+    first_name: str = Field(None, min_length=2)
+    last_name: str = Field(None, min_length=2)
+    email: str = Field(None)
+    hashed_password: str = Field(None, alias="new_password")
+    old_password: str = Field(None)
+
+
 class UserResponse(BaseModel):
     id: int
     first_name: Optional[str] = None

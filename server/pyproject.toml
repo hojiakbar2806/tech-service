@@ -21,6 +21,10 @@ dependencies = [
     "asyncpg (>=0.30.0,<0.31.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
     "gunicorn (>=23.0.0,<24.0.0)",
+    "google-auth (>=2.40.2,<3.0.0)",
+    "google-auth-oauthlib (>=1.2.2,<2.0.0)",
+    "google-api-python-client (>=2.169.0,<3.0.0)",
+    "postmarker (>=1.0,<2.0)",
 ]
 
 

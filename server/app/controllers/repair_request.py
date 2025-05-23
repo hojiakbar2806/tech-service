@@ -10,7 +10,9 @@ from app.repositories.user import UserRepository
 from app.core.exceptions import ResourceNotFoundException
 from app.repositories.repair_request import RepairRequestRepository
 from app.schemas.repair_request import PersonalizedRepairRequest, RepairRequestCreate, RepairRequestResponse
-from app.utils.email import send_notification
+from app.utils.email import send_auth_link_to_user, send_notification
+from app.utils.auth import auth_service
+from app.core.config import settings
 
 
 class RepairRequestController:
@@ -19,6 +21,29 @@ class RepairRequestController:
         self.user_repo = UserRepository(db)
         self.auth_controller = AuthController(db)
         self.notification_repo = NotificationRepository(db)
+
+    async def create_request_by_email(self, email: str, data_in: RepairRequestCreate):
+        db_user = await self.user_repo.get_by_email(email)
+        if db_user:
+            user = db_user
+        else:
+            user = await self.user_repo.create_user({"email": email})
+
+        data = data_in.model_dump()
+        data["owner_id"] = user.id
+        db_obj = await self.repair_request_repo.create_request(data, refresh=True)
+        await send_notification("Yangi so'rovnoma yaratildi", email, data_in.description)
+        await self.notification_repo.create_notification({
+            "title": f"Yangi so'rovnoma yaratildi: {db_obj.id}",
+            "receiver_id": user.id,
+            "for_action": "aprove",
+            "request_id": db_obj.id,
+            "sender_id": user.id,
+            "message": data_in.description
+        })
+        token = auth_service.create_one_time_token(user.id)
+        await send_auth_link_to_user(email,  f"{settings.client_url}/auth/verify/{token}")
+        return JSONResponse({"message": f"So'rovnoma muvaffaqiyatli yaratildi {db_obj.id}"})
 
     async def create(self, request: Request, data_in: RepairRequestCreate):
         owner_id = getattr(request.state, "user").get("id")

@@ -1,42 +1,27 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertTriangle, CheckCircle2, Clock4, Ban } from "lucide-react"
-import { useNavigate } from "react-router-dom"
 import useApi from "@/hooks/useApi"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
+import { useSearchParams } from "react-router"
+import type { Application } from "@/types/application"
+import { getStatus } from "@/components/get-status"
+import { STATUS_OPTIONS } from "@/lib/const"
+import { Button } from "@/components/ui/button"
 
-interface Application {
-  id: string
-  device_model: string
-  issue_type: string
-  problem_area: string
-  description: string
-  location: string
-  status: string
-  created_at: string
-  estimated_completion?: number
-  master: {
-    id: string
-    name: string
-    email: string
-  }
-  end_time: string
-}
 
 export default function ProfilePage() {
   const api = useApi()
-  const navigate = useNavigate()
-
-  const { data, isLoading } = useQuery({
+  const [loadingItem, setLoadingItem] = useState<number | null>(null)
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["my-applications"],
     queryFn: () => api.get<Application[]>("/repair-requests/me"),
+    select: (data) => data.data,
   })
 
-  const apps = data?.data ?? []
-
   const countByStatus = (status: string) =>
-    apps.filter((a) => a.status === status).length
+    data?.filter((a) => a.status === status).length || 0
 
   const stats = [
     {
@@ -70,11 +55,33 @@ export default function ProfilePage() {
     const minutes = Math.floor((seconds % 3600) / 60)
     return `${hours} soat ${minutes} daqiqa`
   }
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const inProgressApps = apps.filter((app) => app.status === "in_progress")
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "all"
+  )
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value)
+    setSearchParams({ status: value })
+  }
+
+  const filteredApps = data?.filter((app) =>
+    statusFilter === "all" ? true : app.status === statusFilter
+  ) ?? []
+
+  const approve = useMutation({
+    mutationFn: (id: number) => api.post(`/repair-requests/${id}/as-in-progress`),
+  })
+
+  const handleApprove = async (id: number) => {
+    setLoadingItem(id)
+    await approve.mutateAsync(id)
+    await refetch()
+    setLoadingItem(null)
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col gap-6">
       <div className="grid grid-cols-2 lg:grid-cols-4  gap-4">
         {stats.map((stat) => (
           <Card key={stat.title} className={`${stat.color} shadow-md`}>
@@ -89,51 +96,78 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold">Jarayondagi murojaatlar</h3>
-        <Button onClick={() => navigate("/profile/applications")}>Barcha murojaatlar</Button>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">Sizning murojaatlar</h3>
+        <Select onValueChange={handleStatusChange} value={statusFilter}>
+          <SelectTrigger className="cursor-pointer">
+            <SelectValue placeholder="Barchasi" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        {
-          isLoading ? (
-            <div className="p-4">Loading...</div>
-          ) :
-            inProgressApps.length > 0 ? (
-              <Table>
-                <TableHeader className="bg-primary/10">
-                  <TableRow>
-                    <TableHead>Model</TableHead>
-                    <TableHead>Joylashuv</TableHead>
-                    <TableHead>Sana</TableHead>
-                    <TableHead>Taxminiy tugash</TableHead>
-                    <TableHead>Tugash sanasi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inProgressApps.map((app) => (
-                    <TableRow key={app.id}>
-                      <TableCell>{app.device_model}</TableCell>
-                      <TableCell>{app.location}</TableCell>
-                      <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        {app.estimated_completion
-                          ? formatDuration(app.estimated_completion)
-                          : "Belgilanmagan"}
-                      </TableCell>
-                      <TableCell>{new Date(app.end_time).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) :
-              (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  Jarayonda murojaatlar mavjud emas
-                </div>
-              )
-        }
+      <div className="w-full h-full border rounded-xl shadow overflow-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-gray-100 sticky top-0 z-10">
+              <th className="p-2 px-6 text-left border-b">Model</th>
+              <th className="p-2 px-6 text-left border-b">Joylashuv</th>
+              <th className="p-2 px-6 text-left border-b">Sana</th>
+              <th className="p-2 px-6 text-left border-b">Taxminiy tugash</th>
+              <th className="p-2 px-6 text-left border-b">Tugash sanasi</th>
+              <th className="p-2 px-6 text-left border-b">Holat</th>
+              {filteredApps.find((app) => app.status === "approved") && (
+                <th className="p-2 px-6 text-left border-b">Amal</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="text-center p-4">Yuklanmoqda...</td>
+              </tr>
+            ) : filteredApps.length > 0 ? (
+              filteredApps.map((app) => (
+                <tr key={app.id} className="hover:bg-gray-50">
+                  <td className="p-2 px-6 border-b whitespace-nowrap">{app.device_model}</td>
+                  <td className="p-2 px-6 border-b whitespace-nowrap">{app.location}</td>
+                  <td className="p-2 px-6 border-b whitespace-nowrap">{new Date(app.created_at).toLocaleDateString()}</td>
+                  <td className="p-2 px-6 border-b whitespace-nowrap">
+                    {app.estimated_completion
+                      ? formatDuration(app.estimated_completion)
+                      : "Belgilanmagan"}
+                  </td>
+                  <td className="p-2 px-6 border-b whitespace-nowrap">{new Date(app.end_time).toLocaleDateString()}</td>
+                  <td className="p-2 px-6 border-b whitespace-nowrap">{getStatus(app.status)}</td>
+                  {app.status === "approved" && (
+                    <td className="p-2 px-6 border-b whitespace-nowrap">
+                      <Button
+                        onClick={() => handleApprove(app.id)}
+                        className="cursor-pointer"
+                        disabled={loadingItem === app.id}
+                      >
+                        {loadingItem === app.id ? "Yuklanmoqda..." : "Tasdiqlash"}
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="text-center p-4">Murojaatlar mavjud emas</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
     </div>
   )
 }

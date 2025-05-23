@@ -1,16 +1,16 @@
 from fastapi import HTTPException
-from app.core.enums import TokenType
-from app.core.exceptions import EmailException, JWTException
-from fastapi.responses import JSONResponse, RedirectResponse
+from app.core.enums import Roles, TokenType
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.auth import AuthRepository
 from app.repositories.user import UserRepository
+from app.core.exceptions import EmailException, JWTException
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.core.config import settings
-from app.utils.email import send_auth_link_to_user
+from app.utils.auth import auth_service
 from app.schemas.user import UserResponse
 from app.utils.hash import verify_password
-from app.utils.auth import auth_service
+from app.utils.email import send_auth_link_to_user
 
 
 class AuthController:
@@ -23,6 +23,10 @@ class AuthController:
             user = await self.user_repo.get_by_email(email)
             if not user:
                 user = await self.user_repo.create_user({"email": email})
+            if user.role != Roles.USER:
+                raise HTTPException(
+                    status_code=400, detail="Siz ga faqat login parol bilan kirishga ruxsat etilgan"
+                )
             token = auth_service.create_one_time_token(user.id)
             await send_auth_link_to_user(email,  f"{settings.client_url}/auth/verify/{token}")
             return JSONResponse(
@@ -39,9 +43,10 @@ class AuthController:
         try:
             token_in_blacklist = await self.auth_repo.check_token_blacklist(token)
             if token_in_blacklist:
-                return HTTPException(status_code=400,detail="Token allaqchon ishlatilgan")
+                raise HTTPException(
+                    status_code=400, detail="Token allaqchon ishlatilgan")
 
-            # await self.auth_repo.add_token_blacklist(token, TokenType.ONE_TIME)
+            await self.auth_repo.add_token_blacklist(token, TokenType.ONE_TIME)
 
             payload = await auth_service.verify_jwt_token(token, [TokenType.ONE_TIME])
             refresh_token = auth_service.create_refresh_token(payload)
@@ -77,16 +82,17 @@ class AuthController:
             content={
                 "status": "success",
                 "message": "Muvaffaqiyatli ro'yxatdan o'tdingiz",
-                "access_token": access_token
+                "access_token": access_token,
+                "role": user.role
             }
         )
         response.set_cookie(
-                key="refresh_token",
-                value=refresh_token,
-                httponly=True,
-                secure=True,
-                samesite="strict"
-            )
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="strict"
+        )
         return response
 
     async def refresh_token(self, token: str) -> dict:

@@ -39,11 +39,13 @@ export default function LoginPage() {
     });
 
     const loginMutation = useMutation({
-        mutationFn: async (formData: FormData) =>
-            await api.post("/auth/login", formData, { headers: { "Content-Type": "multipart/form-data" } }),
-        onSuccess: () => {
-            toast.success("Muvaffaqiyatli kirildi.");
-            navigate("/dashboard");
+        mutationFn: (formData: FormData) => api.post("/auth/login", formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+        ),
+        onSuccess: (res) => {
+            toast.success(res.data.message);
+            if (res.data.role === "user") navigate("/profile");
+            else navigate("/dashboard");
         },
         onError: (err) => {
             if (isAxiosError(err)) toast.error(err?.response?.data?.detail);
@@ -52,20 +54,20 @@ export default function LoginPage() {
     });
 
     const sendLinkMutation = useMutation({
-        mutationFn: async (formData: FormData) =>
-            await api.post("/auth/send-auth-link", formData, { headers: { "Content-Type": "multipart/form-data" } }),
-        onSuccess: () => {
-            toast.success("Link yuborildi!");
+        mutationFn: (formData: FormData) => api.post("/auth/send-auth-link", formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+        ),
+        onSuccess: (res) => {
+            toast.success(res.data.message)
         },
         onError: (err) => {
             if (isAxiosError(err)) toast.error(err?.response?.data?.detail);
-            else toast.error("Link yuborishda xatolik yuz berdi");
+            else toast.error("Kirishda xatolik yuz berdi");
         }
     });
 
     const onSubmit = (data: FormValues) => {
         const formData = new FormData();
-        console.log(data)
         if (data.method === "link") {
             formData.append("email", data.email);
             sendLinkMutation.mutate(formData);
@@ -158,7 +160,7 @@ export default function LoginPage() {
 
                                 <Button
                                     type="submit"
-                                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium transition-all duration-300 shadow-md hover:shadow-lg"
+                                    className="w-full cursor-pointer"
                                     disabled={loginMutation.isPending || sendLinkMutation.isPending}
                                 >
                                     {(method === "password"

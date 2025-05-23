@@ -2,16 +2,18 @@ import type { Application } from "@/types/application";
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Button } from "./ui/button";
 
 
 type Props = {
+    isLoading: boolean;
     open: boolean;
     setOpen: (open: boolean) => void;
     selectedApp: Application | null;
     onSubmit: (data: { price: number; end_time: string }) => void;
 };
 
-const ApplicationModal = ({ open, setOpen, selectedApp, onSubmit }: Props) => {
+const ApplicationModal = ({ isLoading, open, setOpen, selectedApp, onSubmit }: Props) => {
     const [price, setPrice] = useState("");
     const [endDate, setEndDate] = useState<Date | null>(null);
 
@@ -39,7 +41,6 @@ const ApplicationModal = ({ open, setOpen, selectedApp, onSubmit }: Props) => {
             price: Number(price),
             end_time: endDate.toISOString().split("T")[0]
         });
-        setOpen(false);
     };
 
     return (
@@ -115,7 +116,7 @@ const ApplicationModal = ({ open, setOpen, selectedApp, onSubmit }: Props) => {
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
                             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2
-                shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                            shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                             required
                         />
                     </div>
@@ -143,20 +144,14 @@ const ApplicationModal = ({ open, setOpen, selectedApp, onSubmit }: Props) => {
                             />
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => setOpen(false)}
-                            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition"
-                        >
-                            Bekor qilish
-                        </button>
 
-                        <button
+                        <Button
                             type="submit"
-                            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
+                            disabled={isLoading}
+                            className="cursor-pointer"
                         >
-                            Saqlash
-                        </button>
+                            {isLoading ? "Yuklanmoqda..." : "Qabul olish"}
+                        </Button>
                     </div>
                 </form>
             </div>

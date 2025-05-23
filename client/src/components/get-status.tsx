@@ -3,7 +3,7 @@ export function getStatus(status: string) {
         created: "bg-gray-500 text-white",
         checked: "bg-blue-500 text-white",
         approved: "bg-green-500 text-white",
-        in_progress: "bg-yellow-500 text-black",
+        in_progress: "bg-yellow-500 text-white",
         completed: "bg-purple-500 text-white",
         rejected: "bg-red-500 text-white",
     };

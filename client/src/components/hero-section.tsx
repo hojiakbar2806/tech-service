@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button"
-import { Input } from "./ui/input"
 
 export function HeroSection() {
     return (
@@ -24,10 +23,9 @@ export function HeroSection() {
                             </h1>
                             <p className="mt-3 max-w-md text-base text-gray-500 sm:mx-auto sm:mt-5 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl lg:mx-0">
                                 Tezda bog‘lanish uchun email manzilingizni qoldiring — biz siz bilan albatta bog‘lanamiz!                            </p>
-                            <form className="w-1/2 mt-5 sm:mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
-                                <Input placeholder="Emailingizni kiriting" />
-                                <Button>Yuborish</Button>
-                            </form>
+                            <Button asChild className="cursor-pointer mt-2">
+                                <a href="#cta">So'rov yuborish</a>
+                            </Button>
                         </div>
                     </main>
                 </div>

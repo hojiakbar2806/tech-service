@@ -7,9 +7,9 @@ import SessionProvider from '@/components/providers/SessionProvider';
 const DashboardLayout: React.FC = () => {
     return (
         <SessionProvider role={["master", "manager"]}>
-            <div className="min-h-screen flex flex-col">
+            <div className="h-screen flex flex-col">
                 <ProfileNavbar />
-                <div className="flex-1 flex w-full">
+                <div className="flex w-full h-[calc(100%-100px)]">
                     <DashboardSidebar />
                     <div className="w-full md:w-[calc(100%-280px)] flex flex-col p-5">
                         <Outlet />

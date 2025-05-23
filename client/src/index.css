@@ -116,8 +116,14 @@
   overscroll-behavior: none;
 }
 
+html, body {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: auto;
+}
+
 body {
-  @apply bg-background text-foreground;
+  @apply bg-background text-foreground overscroll-contain;
 }
 
 #root{

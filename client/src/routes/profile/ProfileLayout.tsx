@@ -6,11 +6,11 @@ import SessionProvider from '@/components/providers/SessionProvider'
 const ProfileLayout = () => {
     return (
         <SessionProvider role={['user']}>
-            <div className='min-h-screen flex flex-col'>
+            <div className='h-screen flex flex-col'>
                 <ProfileNavbar />
-                <div className='flex-1 flex w-full'>
+                <div className='flex w-full'>
                     <ProfileSidebar />
-                    <div className='flex-1 flex flex-col w-full p-5'>
+                    <div className='h-full overflow-auto flex flex-col w-full px-4 py-5 sm:px-6 lg:px-8'>
                         <Outlet />
                     </div>
                 </div>

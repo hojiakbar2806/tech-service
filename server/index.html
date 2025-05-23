@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50">
+    <div class="min-h-screen flex">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="w-64 bg-white shadow-md hidden md:block">
+        <div class="p-4 border-b">
+          <div class="flex items-center gap-2">
+            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18" /></svg>
+            <h1 class="text-xl font-bold">Admin Panel</h1>
+          </div>
+        </div>
+        <nav class="p-4">
+          <h2 class="text-xs font-bold text-gray-400 uppercase mb-2">Asosiy</h2>
+          <ul class="space-y-2">
+            <li><a href="#" class="flex items-center gap-2 text-blue-600 font-medium"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"/></svg> Dashboard</a></li>
+            <li><a href="#" class="flex items-center gap-2 text-gray-700"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H5l-2 2V7a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Murojatlar</a></li>
+            <li><a href="#" class="flex items-center gap-2 text-gray-700"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 13V6a2 2 0 00-2-2h-5.586a1 1 0 00-.707.293l-6.414 6.414a1 1 0 000 1.414l6.414 6.414a1 1 0 00.707.293H18a2 2 0 002-2v-7z"/></svg> Mahsulotlar</a></li>
+            <li><a href="#" class="flex items-center gap-2 text-gray-700"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5.121 17.804A3.978 3.978 0 004 20a4 4 0 108-0c0-.98-.356-1.872-.938-2.561M4 4h16v4H4z"/></svg> Profil</a></li>
+          </ul>
+        </nav>
+        <div class="p-4 border-t">
+          <button class="flex items-center gap-2 text-red-600 font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg> Chiqish
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="flex-1 p-4 md:p-8">
+        <header class="mb-8">
+          <h1 class="text-2xl font-bold">Salom, Admin!</h1>
+          <p class="text-gray-500">Boshqaruv paneliga xush kelibsiz</p>
+        </header>
+
+        <!-- Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-white p-4 rounded shadow">
+            <p class="text-sm text-gray-500">Jami murojatlar</p>
+            <h2 class="text-2xl font-bold">128</h2>
+            <p class="text-xs text-green-500 flex items-center mt-1">⬆ 12% o'sish</p>
+          </div>
+          <div class="bg-white p-4 rounded shadow">
+            <p class="text-sm text-gray-500">Yangi murojatlar</p>
+            <h2 class="text-2xl font-bold">24</h2>
+            <p class="text-xs text-green-500 flex items-center mt-1">⬆ 8% o'sish</p>
+          </div>
+          <div class="bg-white p-4 rounded shadow">
+            <p class="text-sm text-gray-500">Jami mahsulotlar</p>
+            <h2 class="text-2xl font-bold">56</h2>
+            <p class="text-xs text-green-500 flex items-center mt-1">⬆ 4% o'sish</p>
+          </div>
+          <div class="bg-white p-4 rounded shadow">
+            <p class="text-sm text-gray-500">Foydalanuvchilar</p>
+            <h2 class="text-2xl font-bold">2,345</h2>
+            <p class="text-xs text-red-500 flex items-center mt-1">⬇ 2% kamayish</p>
+          </div>
+        </section>
+
+        <!-- Table -->
+        <section class="bg-white p-4 rounded shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="font-semibold">Murojatlar ro'yxati</h2>
+            <input type="text" placeholder="Qidirish..." class="border px-2 py-1 rounded" />
+          </div>
+          <div class="overflow-x-auto">
+            <table class="table-auto w-full text-sm">
+              <thead>
+                <tr class="bg-gray-100 text-left">
+                  <th class="p-2">ID</th>
+                  <th class="p-2">Mavzu</th>
+                  <th class="p-2">Mijoz</th>
+                  <th class="p-2">Sana</th>
+                  <th class="p-2">Status</th>
+                  <th class="p-2 text-right">Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b">
+                  <td class="p-2">1</td>
+                  <td class="p-2">Mahsulot haqida savol</td>
+                  <td class="p-2">Aziz Karimov</td>
+                  <td class="p-2">12.05.2024</td>
+                  <td class="p-2"><span class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Yangi</span></td>
+                  <td class="p-2 text-right space-x-2">
+                    <button class="text-blue-600 hover:underline">Ko'rish</button>
+                    <button class="text-yellow-600 hover:underline">Tahrirlash</button>
+                  </td>
+                </tr>
+                <!-- Qo'shimcha qatorlar shu tarzda -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- JavaScript to toggle sidebar on mobile -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const sidebar = document.getElementById("sidebar");
+        const toggleBtn = document.getElementById("mobileToggle");
+
+        if (toggleBtn) {
+          toggleBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("hidden");
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

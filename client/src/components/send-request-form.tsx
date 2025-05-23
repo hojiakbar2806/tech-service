@@ -1,16 +1,16 @@
-import { Card, CardContent } from './ui/card'
+import { z } from 'zod'
+import api from '@/lib/api'
 import { Label } from './ui/label'
 import { Input } from './ui/input'
-import { RadioGroup, RadioGroupItem } from './ui/radio-group'
-import { Textarea } from './ui/textarea'
-import { Button } from './ui/button'
-import { useMutation } from '@tanstack/react-query'
-import api from '@/lib/api'
 import toast from 'react-hot-toast'
 import { isAxiosError } from 'axios'
-import { z } from 'zod'
+import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
+import { Card, CardContent } from './ui/card'
+import { useMutation } from '@tanstack/react-query'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 
 const schema = z.object({
     device_model: z.string().min(1, "Qurilma modeli kiritilishi shart"),
@@ -25,10 +25,10 @@ type FormData = z.infer<typeof schema>
 
 const SendRequestForm = () => {
 
-    const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) })
+    const { control, register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
 
     const mutation = useMutation({
-        mutationFn: (data: FormData) => api.post("/repair-requests", data),
+        mutationFn: ({ email, ...data }: { email: string } & FormData) => api.post(`/repair-requests/${email}/create`, data),
         onSuccess: (res) => {
             toast.success(res?.data?.message || "So‘rov muvaffaqiyatli yuborildi")
             reset()
@@ -56,7 +56,7 @@ const SendRequestForm = () => {
                             id="device_model"
                             placeholder="Masalan: MacBook Pro 2021"
                             {...register("device_model")}
-                            disabled={isSubmitting}
+
                         />
                         {errors.device_model && <p className="text-red-600 text-sm">{errors.device_model.message}</p>}
                     </div>
@@ -66,7 +66,7 @@ const SendRequestForm = () => {
                             id="device_model"
                             placeholder="example@gmail.com"
                             {...register("email")}
-                            disabled={isSubmitting}
+
                         />
                         {errors.device_model && <p className="text-red-600 text-sm">{errors.device_model.message}</p>}
                     </div>
@@ -100,7 +100,7 @@ const SendRequestForm = () => {
                             id="problem_area"
                             placeholder="Masalan: Displey, Klaviatura"
                             {...register("problem_area")}
-                            disabled={isSubmitting}
+
                         />
                         {errors.problem_area && <p className="text-red-600 text-sm">{errors.problem_area.message}</p>}
                     </div>
@@ -112,7 +112,7 @@ const SendRequestForm = () => {
                             placeholder="Muammo haqida batafsil yozing"
                             className="min-h-[120px]"
                             {...register("description")}
-                            disabled={isSubmitting}
+
                         />
                         {errors.description && <p className="text-red-600 text-sm">{errors.description.message}</p>}
                     </div>
@@ -123,13 +123,13 @@ const SendRequestForm = () => {
                             id="location"
                             placeholder="Masalan: Ofis 101"
                             {...register("location")}
-                            disabled={isSubmitting}
+
                         />
                         {errors.location && <p className="text-red-600 text-sm">{errors.location.message}</p>}
                     </div>
 
-                    <Button className='w-full cursor-pointer' type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Yuborilmoqda..." : "So'rov yuborish"}
+                    <Button className='w-full cursor-pointer' type="submit" disabled={mutation.isPending}>
+                        {mutation.isPending ? "Yuborilmoqda..." : "So'rov yuborish"}
                     </Button>
                 </CardContent>
             </form>

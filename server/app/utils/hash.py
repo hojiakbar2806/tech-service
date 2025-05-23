@@ -12,14 +12,9 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> Tuple[bool, Union[str, None]]:
     try:
-        argon2_hasher.verify(hashed_password, plain_password)
-        if argon2_hasher.check_needs_rehash(hashed_password):
-            new_hash = argon2_hasher.hash(plain_password)
-            return True, new_hash
-        return True, None
-
+        return argon2_hasher.verify(hashed_password, plain_password)
     except VerifyMismatchError:
-        return False, None
+        return False
 
 
 def generate_password(length: int = 16) -> str:

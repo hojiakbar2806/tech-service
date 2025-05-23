@@ -7,19 +7,15 @@ import ProfileLayout from "./routes/profile/ProfileLayout";
 import VerifyToken from "./routes/auth/VerifyToken";
 import RootLayout from "./routes/RootLayout";
 import LoginPage from "./routes/auth/Login";
-import NotificationsPage from "./routes/profile/Notifications";
 import DashboardLayout from "./routes/dashboard/DashboardLayout";
 import Dashboard from "./routes/dashboard/manager/Dashboard";
-import UsersList from "./routes/dashboard/manager/UsersList";
-import Applications from "./routes/dashboard/manager/RecentlyApplications";
-import AllApplications from "./routes/dashboard/manager/AllApplications";
-import AddUser from "./routes/dashboard/manager/AddUser";
+import Applications from "./routes/dashboard/master/Applications";
+import ManagerApplications from "./routes/dashboard/manager/Applications.tsx";
 import ProtectedRouteForMaster from "./routes/dashboard/ProtectedRouteForMaster";
 import ProtectedRouteForManager from "./routes/dashboard/ProtectedRouteForManager.tsx"; // agar kerak bo‘lsa
-import CompletedApplications from "./routes/dashboard/master/CompletedApplications.tsx";
-import NewApplications from "./routes/dashboard/master/NewApplications.tsx";
-import ReceivedApplications from "./routes/dashboard/master/ReceivedApplications.tsx";
-import NotificationsForMaster from "./routes/dashboard/master/Notifications.tsx";
+import NotificationsPage from "./routes/Notifications";
+import SettingsPage from "./routes/Settings.tsx";
+import UsersPage from "./routes/dashboard/manager/Users.tsx";
 
 export const router = createBrowserRouter([
   {
@@ -63,6 +59,10 @@ export const router = createBrowserRouter([
             path: "notifications",
             Component: NotificationsPage,
           },
+          {
+            path: "settings",
+            Component: SettingsPage,
+          },
         ],
       },
       {
@@ -75,23 +75,15 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                Component: Applications, 
+                Component: SettingsPage, 
               },
               {
-                path: "new-applications",
-                Component: NewApplications,
-              },
-              {
-                path: "received-applications",
-                Component: ReceivedApplications,
-              },
-              {
-                path:"completed-applications",
-                Component: CompletedApplications
+                path: "applications",
+                Component: Applications,
               },
               {
                 path:"notifications",
-                Component: NotificationsForMaster
+                Component: NotificationsPage
               }
             ],
           },
@@ -104,24 +96,20 @@ export const router = createBrowserRouter([
                 Component: Dashboard,
               },
               {
-                path: "users-list",
-                Component: UsersList,
+                path: "users",
+                Component: UsersPage,
               },
               {
-                path: "users-add",
-                Component: AddUser,
-              },
-              {
-                path: "recently-applications",
-                Component: Applications,
-              },
-              {
-                path: "all-applications",
-                Component: AllApplications,
+                path: "applications",
+                Component: ManagerApplications,
               },
               {
                 path:"notifications",
-                Component: NotificationsForMaster
+                Component: NotificationsPage
+              },
+              {
+                path:"settings",
+                Component: SettingsPage
               }
             ],
           },

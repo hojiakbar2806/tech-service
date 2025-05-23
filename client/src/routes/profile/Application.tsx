@@ -4,36 +4,18 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import useApi from "@/hooks/useApi"
-import type { User } from "@/types/user"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
     BadgeAlert, BadgeInfo, DollarSign, Info, Laptop, MapPin, UserIcon,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { useSearchParams } from "react-router-dom"
+import type { Application } from "@/types/application"
+import { STATUS_OPTIONS } from "@/lib/const"
 
-interface Application {
-    id: number
-    device_model: string
-    issue_type: string
-    problem_area: string
-    price: number
-    description: string
-    location: string
-    status: string
-    created_at: string
-    master: User
-}
-
-const STATUS_OPTIONS = [
-    { value: "created", label: "Yaratilgan" },
-    { value: "approved", label: "Tasdiqlangan" },
-    { value: "in_progress", label: "Jarayonda" },
-    { value: "completed", label: "Bajarilgan" },
-    { value: "rejected", label: "Rad etilgan" },
-]
 
 export default function ApplicationsPage() {
     const api = useApi()
@@ -46,10 +28,27 @@ export default function ApplicationsPage() {
         mutationFn: (id: number) => api.post(`/repair-requests/${id}/as-in-progress`),
     })
 
-    const [statusFilter, setStatusFilter] = useState("approved")
 
-    const filteredApps = data?.data.filter((app) => statusFilter ? app.status === statusFilter : true
-    ) ?? []
+    const [searchParams, setSearchParams] = useSearchParams()
+    const statusFromParams = searchParams.get("status") || "all"
+    const [statusFilter, setStatusFilter] = useState(statusFromParams)
+
+
+    useEffect(() => setStatusFilter(statusFromParams), [statusFromParams])
+
+
+    const onStatusChange = (value: string) => {
+        setStatusFilter(value)
+        if (value === "all") {
+            searchParams.delete("status")
+            setSearchParams(searchParams)
+        } else {
+            setSearchParams({ status: value })
+        }
+    }
+
+
+    const filteredApps = data?.data.filter((app) => statusFilter === "all" ? true : app.status === statusFilter) ?? []
 
     const handleApprove = async (id: number) => {
         await approve.mutateAsync(id)
@@ -60,13 +59,13 @@ export default function ApplicationsPage() {
         <>
             <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 className="text-2xl font-bold">Sizning Murojatlaringiz</h2>
-                <Select onValueChange={setStatusFilter}>
-                    <SelectTrigger >
-                        <SelectValue placeholder="Filter" />
+                <Select onValueChange={onStatusChange} value={statusFilter}>
+                    <SelectTrigger className="cursor-pointer">
+                        <SelectValue placeholder="Filter" className="cursor-pointer" />
                     </SelectTrigger>
                     <SelectContent>
                         {STATUS_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
+                            <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>
                                 {opt.label}
                             </SelectItem>
                         ))}
@@ -97,9 +96,9 @@ export default function ApplicationsPage() {
                     <Info className="w-4 h-4 mr-2" />
                     <AlertTitle>Ma’lumot topilmadi</AlertTitle>
                     <AlertDescription>
-                        {statusFilter
-                            ? "Tanlangan statusga mos murojaatlar topilmadi."
-                            : "Hozircha sizda hech qanday qabul qilingan murojaatlar yo‘q."}
+                        {statusFilter === "all"
+                            ? "Hozircha murojaatlar mavjud emas."
+                            : "Tanlangan statusga mos murojaatlar topilmadi."}
                     </AlertDescription>
                 </Alert>
             ) : (

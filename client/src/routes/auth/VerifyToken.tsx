@@ -4,6 +4,8 @@ import { useParams, useNavigate } from "react-router-dom"
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import api from "@/lib/api"
+import { isAxiosError } from "axios"
 
 const VerifyToken = () => {
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -22,24 +24,19 @@ const VerifyToken = () => {
         const verify = async () => {
             setSession(null)
             try {
-                const res = await fetch(`http://localhost:8000/auth/verify/${token}`, {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                })
-                await new Promise((resolve) => setTimeout(resolve, 1000))
-                if (res.ok) {
-                    setStatus("success")
-                    setTimeout(() => navigate("/profile"), 1000)
-                } else {
-                    const data = await res.json()
-                    setStatus("error")
-                    setMessage(data?.detail.message || "Token noto'g'ri yoki eskirgan.")
-                }
+                await api.post(`/auth/verify/${token}`, null, { withCredentials: true })
+                setStatus("success")
+                setTimeout(() => navigate("/profile"), 1000)
             } catch (error) {
                 console.log(error)
-                setStatus("error")
-                setMessage("Server bilan aloqa yo'q.")
+                if (isAxiosError(error)) {
+                    setStatus("error")
+                    setMessage(error?.response?.data?.detail || "Xatolik yuz berdi")
+                }
+                else {
+                    setStatus("error")
+                    setMessage("Xatolik yuz berdi")
+                }
             }
         }
 
@@ -104,7 +101,7 @@ const VerifyToken = () => {
                         <div className="space-x-3">
                             <Button
                                 variant="outline"
-                                onClick={() => navigate("/login")}
+                                onClick={() => navigate("/auth/login")}
                                 className="border-primary/20 hover:bg-primary/5 hover:text-primary"
                             >
                                 Kirish sahifasiga qaytish

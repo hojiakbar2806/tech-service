@@ -1,15 +1,15 @@
-from fastapi.security import HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Depends, FastAPI, Request, APIRouter
+from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPBearer
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.enums import TokenType
 from app.utils.auth import auth_service
-from app.database.models.user import User
-from app.database.session import get_async_session
 from app.routers import auth, repair_request, user, component, notification
 
-
+CLIENT_SECRETS_FILE = "credentials.json"
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+REDIRECT_URI = "http://localhost:8000/api/oauth2callback"
 
 oauth2_scheme = HTTPBearer(auto_error=False)
 
@@ -31,7 +31,8 @@ api.include_router(notification.router)
 app.include_router(api)
 
 origins = [
-    "https://computer-service.hojiakbar.me/",
+    "https://computer-service.hojiakbar.me",
+    "http://localhost:3000",
 ]
 
 app.add_middleware(

@@ -1,6 +1,17 @@
-import { BellDot, CalendarCheck, ClipboardType, Clock12Icon, ComputerIcon, ContactRound, LayoutDashboard, User2Icon, UserPlus } from "lucide-react";
+import { BellDot, CalendarCheck, ClipboardType, ComputerIcon, ContactRound, LayoutDashboard, Settings2, User2Icon, UserPlus } from "lucide-react";
 
-export const API_URL = "https://computer-service.hojiakbar.me/api"
+export const API_URL = "http://localhost:8000/api"
+
+export const STATUS_OPTIONS = [
+    { value: "all", label: "Hammasi" },
+    { value: "created", label: "Yaratilgan" },
+    { value: "approved", label: "Tasdiqlangan" },
+    { value: "checked", label: "Tekshirilgan" },
+    { value: "in_progress", label: "Jarayonda" },
+    { value: "completed", label: "Yakunlangan" },
+    { value: "rejected", label: "Rad etilgan" },
+  ]
+
 
 export const navlinks = {
     "user":[
@@ -23,6 +34,11 @@ export const navlinks = {
             href: "/profile/notifications",
             title: "Bildirishnomalar",
             icon: BellDot
+        },
+        {
+            href: "/profile/settings",
+            title: "Sozlamalar",
+            icon: Settings2
         }
     ],
     "manager":[
@@ -32,22 +48,12 @@ export const navlinks = {
             icon: LayoutDashboard
         },
         {
-            href: "/dashboard/manager/users-list",
-            title: "Barcha Foydalanuvchilar",
+            href: "/dashboard/manager/users",
+            title: "Foydalanuvchilar",
             icon: User2Icon
         },
         {
-            href: "/dashboard/manager/users-add",
-            title: "Foydalanuvchi qo'shish",
-            icon: UserPlus
-        },
-        {
-            href: "/dashboard/manager/recently-applications",
-            title: "Yaqinda kelgan Murojatlar",
-            icon: Clock12Icon
-        },
-        {
-            href: "/dashboard/manager/all-applications",
+            href: "/dashboard/manager/applications",
             title: "Barcha Murojatlar",
             icon: ComputerIcon
         },
@@ -56,27 +62,17 @@ export const navlinks = {
             title: "Bildirishnomalar",
             icon: BellDot
         },
+        {
+            href: "/dashboard/manager/settings",
+            title: "Sozlamalar",
+            icon: Settings2
+        }
 
     ],
     "master":[
         {
-            href: "/dashboard/master",
-            title: "Shaxsiy kabinet",
-            icon: ContactRound
-        },
-        {
-            href: "/dashboard/master/new-applications",
-            title: "Yangi Murojatlar",
-            icon: ComputerIcon
-        },
-        {
-            href: "/dashboard/master/received-applications",
-            title: "Qabul qilingan Murojatlar",
-            icon: ComputerIcon
-        },
-        {
-            href: "/dashboard/master/completed-applications",
-            title: "Yakunlangan Murojatlar",
+            href: "/dashboard/master/applications",
+            title: "Murojatlar",
             icon: CalendarCheck
         },
         {
@@ -84,5 +80,10 @@ export const navlinks = {
             title: "Bildirishnomalar",
             icon: BellDot
         },
+        {
+            href: "/dashboard/master",
+            title: "Sozlamalar",
+            icon: Settings2
+        }
     ]
 }
