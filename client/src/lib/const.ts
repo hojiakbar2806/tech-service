@@ -1,6 +1,6 @@
 import { BellDot, CalendarCheck, ClipboardType, ComputerIcon, ContactRound, LayoutDashboard, Settings2, User2Icon } from "lucide-react";
 
-export const API_URL = process.env.VITE_API_URL
+export const API_URL = "https://computer-service.hojiakbar.me/api"
 
 export const STATUS_OPTIONS = [
     { value: "all", label: "Hammasi" },
