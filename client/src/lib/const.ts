@@ -35,11 +35,6 @@ export const navlinks = {
             href: "/profile/notifications",
             title: "Bildirishnomalar",
             icon: BellDot
-        },
-        {
-            href: "/profile/settings",
-            title: "Sozlamalar",
-            icon: Settings2
         }
     ],
     "manager":[
@@ -80,6 +75,11 @@ export const navlinks = {
             href: "/dashboard/master/notifications",
             title: "Bildirishnomalar",
             icon: BellDot
+        },
+        {
+            href: "/dashboard/master/components",
+            title: "Komponentlar",
+            icon: ComputerIcon
         },
         {
             href: "/dashboard/master",

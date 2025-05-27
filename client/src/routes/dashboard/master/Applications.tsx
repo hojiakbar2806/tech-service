@@ -1,80 +1,80 @@
-import { useState } from "react"
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { useSearchParams } from "react-router-dom"
-import toast from "react-hot-toast"
-
-import useApi from "@/hooks/useApi"
-import { getStatus } from "@/components/get-status"
-import type { Application } from "@/types/application"
-import ApplicationModal from "@/components/application-modal"
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import useApi from "@/hooks/useApi";
+import { getStatus } from "@/components/get-status";
+import type { Application } from "@/types/application";
 import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table"
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import {
-    Select, SelectContent, SelectGroup, SelectItem, SelectLabel,
-    SelectTrigger, SelectValue
-} from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import ApplicationModal from "@/components/application-modal";
+import { formatDate } from "@/lib/utils";
 
-const Applications = () => {
-    const api = useApi()
-    const [open, setOpen] = useState(false)
-    const [selectedApp, setSelectedApp] = useState<Application | null>(null)
-    const [searchParams, setSearchParams] = useSearchParams()
+export default function Applications() {
+    const api = useApi();
+    const [open, setOpen] = useState(false);
+    const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const selectedStatus = searchParams.get("status") || "all"
+    const selectedStatus = searchParams.get("status") || "all";
 
-    const { data: applications = [], isLoading, refetch } = useQuery({
+    const { data: applications = [], isLoading, isError, refetch } = useQuery({
         queryKey: ["applications"],
         queryFn: async () => {
-            const checked = await api.get("/repair-requests?status=checked")
-            const other = await api.get("/repair-requests/master")
-            return [...checked.data, ...other.data]
-        }
-    })
+            const checked = await api.get("/repair-requests?status=checked");
+            const other = await api.get("/repair-requests/master");
 
-    const mutation = useMutation({
-        mutationFn: (data) => api.patch(`/repair-requests/${selectedApp?.id}/personalize-order`, data),
-        onSuccess: (res) => {
-            toast.success(res?.data?.message || "Murojaat muvaffaqiyatli qabul qilindi")
-            refetch()
-        },
-        onError: () => toast.error("Murojaat qabul qilishda xatolik yuz berdi")
-    })
+            const checkedData = Array.isArray(checked.data) ? checked.data : [];
+            const otherData = Array.isArray(other.data) ? other.data : [];
+
+            return [...checkedData, ...otherData] as Application[];
+        }
+    });
 
     const handleComplete = async (app: Application) => {
         try {
-            await api.patch(`/repair-requests/${app.id}/as-completed`)
-            toast.success("Murojaat tugatildi")
-            refetch()
+            await api.patch(`/repair-requests/${app.id}/as-completed`);
+            toast.success("Murojaat tugatildi");
+            refetch();
         } catch {
-            toast.error("Tugatishda xatolik yuz berdi")
+            toast.error("Tugatishda xatolik yuz berdi");
         }
-    }
+    };
 
-    const filteredApps = selectedStatus === "all"
-        ? applications
-        : applications.filter(app => app.status === selectedStatus)
+    const filteredApps = selectedStatus === "all" ? applications : applications?.filter((app) => app.status === selectedStatus);
 
     const openModalWithApp = (app: Application) => {
         if (app.status === "checked") {
-            setSelectedApp(app)
-            setOpen(true)
+            setSelectedApp(app);
+            setOpen(true);
         }
-    }
-
-
-    const onSubmit = async (data) => {
-        await mutation.mutateAsync(data)
-        await refetch()
-    }
+    };
 
     return (
-        <div className="flex flex-col">
-            <div className="w-full flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold mb-4">Kelgan murojaatlar</h2>
-                <Select value={selectedStatus} onValueChange={(value) => setSearchParams({ status: value })}>
-                    <SelectTrigger className="cursor-pointer">
+        <div className="w-full flex flex-col h-full">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900">Kelgan murojaatlar</h2>
+                <Select
+                    value={selectedStatus}
+                    onValueChange={(value) => setSearchParams({ status: value })}
+                >
+                    <SelectTrigger className="w-40 cursor-pointer">
                         <SelectValue placeholder="Holatni tanlang" />
                     </SelectTrigger>
                     <SelectContent>
@@ -91,60 +91,81 @@ const Applications = () => {
                 </Select>
             </div>
 
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Id</TableHead>
-                        <TableHead>Murojat egasi</TableHead>
-                        <TableHead>Model</TableHead>
-                        <TableHead>Muammo turi</TableHead>
-                        <TableHead>Holati</TableHead>
-                        <TableHead>Yaratilgan vaqti</TableHead>
-                        <TableHead>Amal</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {isLoading ? (
-                        <TableRow>
-                            <TableCell colSpan={7} className="text-center p-4">
-                                Yuklanmoqda...
-                            </TableCell>
+            <div className="flex-1 overflow-auto rounded-md border bg-white">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="bg-slate-100">
+                            <TableHead className="p-2 px-6">Id</TableHead>
+                            <TableHead className="p-2 px-6">Murojat egasi</TableHead>
+                            <TableHead className="p-2 px-6">Model</TableHead>
+                            <TableHead className="p-2 px-6">Muammo turi</TableHead>
+                            <TableHead className="p-2 px-6">Holati</TableHead>
+                            <TableHead className="p-2 px-6">Yaratilgan vaqti</TableHead>
+                            <TableHead className="p-2 px-6">Amal</TableHead>
                         </TableRow>
-                    ) : (
-                        filteredApps.map((app: Application) => (
-                            <TableRow
-                                key={app.id}
-                                className="cursor-pointer hover:bg-gray-100"
-                                onClick={() => openModalWithApp(app)}
-                            >
-                                <TableCell>{app.id}</TableCell>
-                                <TableCell>{app.owner?.email}</TableCell>
-                                <TableCell>{app.device_model}</TableCell>
-                                <TableCell>{app.issue_type === "hardware" ? "Qurilma" : "Dasturiy ta'minot"}</TableCell>
-                                <TableCell>{getStatus(app.status)}</TableCell>
-                                <TableCell>{new Date(app.created_at).toLocaleString()}</TableCell>
-                                <TableCell>
-                                    {app.status === "in_progress" && (
-                                        <Button className="cursor-pointer" size="sm" onClick={(e) => { e.stopPropagation(); handleComplete(app) }}>
-                                            Tugatish
-                                        </Button>
-                                    )}
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            [...Array(5)].map((_, i) => (
+                                <TableRow key={i} className="animate-pulse">
+                                    {[...Array(7)].map((__, j) => (
+                                        <TableCell key={j} className="p-2 px-6">
+                                            <div className="h-4 bg-gray-200 rounded w-full" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : isError ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center text-red-500 p-4">
+                                    Ma‘lumotlarni yuklashda xatolik yuz berdi.
                                 </TableCell>
                             </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
+                        ) : filteredApps.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center p-4">
+                                    Murojaatlar topilmadi
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredApps.map((app: Application) => (
+                                <TableRow
+                                    key={app.id}
+                                    className={app.status === "checked" ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"}
+                                    onClick={() => openModalWithApp(app)}
+                                >
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">{app.id}</TableCell>
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">{app.owner?.email}</TableCell>
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">{app.device_model}</TableCell>
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">
+                                        {app.issue_type === "hardware" ? "Qurilma" : "Dasturiy ta'minot"}
+                                    </TableCell>
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">{getStatus(app.status)}</TableCell>
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">
+                                        {formatDate(app.created_at)}
+                                    </TableCell>
+                                    <TableCell className="p-2 px-6 whitespace-nowrap">
+                                        {app.status === "in_progress" ? (
+                                            <Button
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleComplete(app);
+                                                }}
+                                                className="cursor-pointer bg-blue-500 hover:bg-blue-600"
+                                            >
+                                                Tugatish
+                                            </Button>
+                                        ) : "-"}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
 
-            <ApplicationModal
-                isLoading={mutation.isPending}
-                open={open}
-                setOpen={setOpen}
-                selectedApp={selectedApp}
-                onSubmit={onSubmit}
-            />
+            <ApplicationModal open={open} setOpen={setOpen} selectedApp={selectedApp} refetch={refetch} />
         </div>
-    )
+    );
 }
-
-export default Applications

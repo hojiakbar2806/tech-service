@@ -1,7 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import HomePage from "./routes/Home";
 import SendRequest from "./routes/profile/SendRequest";
-import Profile from "./routes/profile/Profile";
 import ApplicationsPage from "./routes/profile/Application";
 import ProfileLayout from "./routes/profile/ProfileLayout";
 import VerifyToken from "./routes/auth/VerifyToken";
@@ -16,6 +15,7 @@ import ProtectedRouteForManager from "./routes/dashboard/ProtectedRouteForManage
 import NotificationsPage from "./routes/Notifications";
 import SettingsPage from "./routes/Settings.tsx";
 import UsersPage from "./routes/dashboard/manager/Users.tsx";
+import ComponentsPage from "./routes/dashboard/master/Components.tsx";
 
 export const router = createBrowserRouter([
   {
@@ -45,7 +45,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            Component: Profile,
+            Component: SettingsPage,
           },
           {
             path: "applications",
@@ -58,10 +58,6 @@ export const router = createBrowserRouter([
           {
             path: "notifications",
             Component: NotificationsPage,
-          },
-          {
-            path: "settings",
-            Component: SettingsPage,
           },
         ],
       },
@@ -84,6 +80,14 @@ export const router = createBrowserRouter([
               {
                 path:"notifications",
                 Component: NotificationsPage
+              },
+              {
+                path:"settings",
+                Component: SettingsPage
+              },
+              {
+                path:"components",
+                Component: ComponentsPage
               }
             ],
           },

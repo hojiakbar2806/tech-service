@@ -1,9 +1,16 @@
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 from datetime import datetime
 
 from app.core.enums import IssueType, RequestStatus
 from app.schemas.user import UserResponse
+
+
+class UserRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    hashed_password: Optional[str] = Field(None, alias="password")
 
 
 class RepairRequestCreate(BaseModel):
@@ -13,9 +20,21 @@ class RepairRequestCreate(BaseModel):
     description: str
     location: str
 
+
+class RepairRequestWithUserRequest(BaseModel):
+    repair_request: RepairRequestCreate
+    user_data: UserRequest
+
+
+class Component(BaseModel):
+    id: int
+    quantity: int
+
+
 class PersonalizedRepairRequest(BaseModel):
-    end_time: datetime
-    price: float
+    price: int
+    end_date: datetime
+    components: List[Component]
 
 
 class RepairRequestUpdate(BaseModel):
@@ -36,10 +55,9 @@ class RepairRequestResponse(BaseModel):
     location: str
     price: Optional[float] = None
     master: Optional[UserResponse] = None
-    owner:Optional[UserResponse] = None
+    owner: Optional[UserResponse] = None
     status: RequestStatus
     end_time: Optional[datetime] = None
-    estimated_completion: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 

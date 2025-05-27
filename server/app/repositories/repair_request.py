@@ -1,11 +1,11 @@
 from typing import Optional
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import ResourceNotFoundException
+from app.database.models.component import Component
 from app.database.models.repair_request import RepairRequest
-from sqlalchemy.orm import selectinload
-
+from app.database.models.repair_request_component import RepairRequestComponent
 from app.core.enums import RequestStatus
 
 
@@ -26,7 +26,9 @@ class RepairRequestRepository:
             RepairRequest.id == id
         ).options(
             selectinload(RepairRequest.master),
-            selectinload(RepairRequest.owner)
+            selectinload(RepairRequest.owner),
+            selectinload(RepairRequest.component_links).selectinload(
+                RepairRequestComponent.component)
         )
         result = await self.db.execute(stmt)
         db_request = result.scalar_one_or_none()
@@ -78,8 +80,39 @@ class RepairRequestRepository:
         return request_obj
 
     async def delete_request(self, id: int) -> None:
-        request_obj = self.get_by_id(id)
+        request_obj = await self.get_by_id(id)
         if request_obj is None:
             raise ResourceNotFoundException("RepairRequest", id)
-        self.db.delete(request_obj)
-        self.db.commit()
+        await self.db.delete(request_obj)
+        await self.db.commit()
+
+    async def attach_components_to_request(self, request_id: int, components_data: list[dict]) -> Optional[RepairRequest]:
+        request = await self.get_by_id(request_id)
+        if not request:
+            return None
+
+        request.component_links.clear()
+
+        for item in components_data:
+            component_id = item.get("component_id")
+            stmt = select(Component).where(Component.id == component_id)
+            result = await self.db.execute(stmt)
+            component = result.scalar_one_or_none()
+            if component:
+                quantity = item.get("quantity", 1)
+
+                if component.in_stock < quantity:
+                    raise Exception(
+                        f"'{component.name}' komponenti omborda yetarli emas. Mavjud: {component.in_stock}, kerak: {quantity}")
+
+                component.in_stock -= quantity
+
+                link = RepairRequestComponent(
+                    component=component,
+                    quantity=quantity
+                )
+                request.component_links.append(link)
+
+        await self.db.commit()
+        await self.db.refresh(request)
+        return request

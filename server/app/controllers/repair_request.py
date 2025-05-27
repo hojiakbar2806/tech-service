@@ -1,3 +1,6 @@
+# imports (boshida turganlar) o'zgarmagan
+import asyncio
+import secrets
 from typing import List, Optional
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -7,165 +10,194 @@ from app.core.enums import RequestStatus, Roles
 from app.controllers.auth import AuthController
 from app.repositories.notification import NotificationRepository
 from app.repositories.user import UserRepository
-from app.core.exceptions import ResourceNotFoundException
 from app.repositories.repair_request import RepairRequestRepository
-from app.schemas.repair_request import PersonalizedRepairRequest, RepairRequestCreate, RepairRequestResponse
+from app.schemas.repair_request import PersonalizedRepairRequest, RepairRequestCreate, RepairRequestResponse, RepairRequestWithUserRequest
 from app.utils.email import send_auth_link_to_user, send_notification
 from app.utils.auth import auth_service
 from app.core.config import settings
+from app.utils.hash import hash_password
+from app.core.exceptions import ResourceNotFoundException
 
 
 class RepairRequestController:
     def __init__(self, db: AsyncSession):
+        self.db = db
         self.repair_request_repo = RepairRequestRepository(db)
         self.user_repo = UserRepository(db)
         self.auth_controller = AuthController(db)
         self.notification_repo = NotificationRepository(db)
 
-    async def create_request_by_email(self, email: str, data_in: RepairRequestCreate):
-        db_user = await self.user_repo.get_by_email(email)
+    async def _get_user_id(self, request: Request):
+        return getattr(request.state, "user").get("id")
+
+    async def _send_and_create_notifications(self, users, title, message, sender_id, request_id, for_action="aprove"):
+        tasks = []
+        for user in users:
+            await self.notification_repo.create_notification({
+                "title": f"{title}: {request_id}",
+                "receiver_id": user.id,
+                "for_action": for_action,
+                "request_id": request_id,
+                "sender_id": sender_id,
+                "message": message
+            })
+            tasks.append(send_notification(title, user.email, message))
+        results = await asyncio.gather(*tasks)
+
+        await self.db.commit()
+
+        return results
+
+    async def create_request_with_user(self, data_in: RepairRequestWithUserRequest):
+        db_user = await self.user_repo.get_by_email(data_in.user_data.email)
+        new_password = None
+
         if db_user:
             user = db_user
         else:
-            user = await self.user_repo.create_user({"email": email})
+            new_password = secrets.token_urlsafe(8)
+            hashed_pw = hash_password(new_password)
+            data = data_in.user_data.model_dump()
+            data["hashed_password"] = hashed_pw
+            user = await self.user_repo.create_user(data)
 
-        data = data_in.model_dump()
-        data["owner_id"] = user.id
-        db_obj = await self.repair_request_repo.create_request(data, refresh=True)
-        await send_notification("Yangi so'rovnoma yaratildi", email, data_in.description)
-        await self.notification_repo.create_notification({
-            "title": f"Yangi so'rovnoma yaratildi: {db_obj.id}",
-            "receiver_id": user.id,
-            "for_action": "aprove",
-            "request_id": db_obj.id,
-            "sender_id": user.id,
-            "message": data_in.description
-        })
+        request_data = data_in.repair_request.model_dump()
+        request_data["owner_id"] = user.id
+        db_obj = await self.repair_request_repo.create_request(request_data, refresh=True)
+
+        masters = await self.user_repo.get_master_users()
+        await self._send_and_create_notifications(
+            masters,
+            "Yangi so'rovnoma yaratildi",
+            request_data.get("description", ""),
+            user.id,
+            db_obj.id
+        )
+
         token = auth_service.create_one_time_token(user.id)
-        await send_auth_link_to_user(email,  f"{settings.client_url}/auth/verify/{token}")
-        return JSONResponse({"message": f"So'rovnoma muvaffaqiyatli yaratildi {db_obj.id}"})
+        auth_url = f"{settings.client_url}/auth/verify/{token}"
+        await send_auth_link_to_user(user.email, auth_url, user.first_name, new_password)
 
-    async def create(self, request: Request, data_in: RepairRequestCreate):
-        owner_id = getattr(request.state, "user").get("id")
-        data = data_in.model_dump()
-        data["owner_id"] = owner_id
-        db_obj = await self.repair_request_repo.create_request(data, refresh=True)
-        master_users = await self.user_repo.get_all_users(role=Roles.MANAGER)
-        for user in master_users:
-            msg = {
-                "title": f"Yangi so'rovnoma yaratildi: {db_obj.id}",
-                "receiver_id": user.id,
-                "sender_id": owner_id,
-                "message": data_in.description
-            }
-            await self.notification_repo.create_notification(msg)
-            await send_notification(msg["title"], user.email, msg["message"])
-        return JSONResponse({"message": "So'rovnoma muvaffaqiyatli yaratildi"})
-
-    async def get_repair_request(self, id: int):
-        try:
-            request = await self.repair_request_repo.get_by_id(id)
-            return RepairRequestResponse.model_validate(request)
-        except ResourceNotFoundException as e:
-            raise HTTPException(detail=str(e))
-
-    async def get_all(self, status: Optional[RequestStatus] = None) -> List[RepairRequestResponse]:
-        request = await self.repair_request_repo.get_all(status)
-        return [RepairRequestResponse.model_validate(req) for req in request]
-
-    async def get_my_repair_requests(self, request: Request) -> List[RepairRequestResponse]:
-        user_id = getattr(request.state, "user").get("id")
-        repair_requests = await self.repair_request_repo.get_by_owner_id(user_id)
-        return repair_requests
-
-    async def get_master_repair_requests(self, request: Request) -> List[RepairRequestResponse]:
-        user_id = getattr(request.state, "user").get("id")
-        repair_requests = await self.repair_request_repo.get_by_master_id(user_id)
-        return repair_requests
+        return JSONResponse({"message": f"So'rovnoma muvaffaqiyatli yaratildi. ID: {db_obj.id}"})
 
     async def personalize_order(self, id: int, data_in: PersonalizedRepairRequest, request: Request):
         try:
-            user_id = getattr(request.state, "user").get("id")
-            await self.repair_request_repo.partial_update(id, {"master_id": user_id, **data_in.model_dump(), "status": RequestStatus.APPROVED})
-            return JSONResponse({"message": "So'rovnoma muvaffaqiyatli olindi"})
-        except ResourceNotFoundException as e:
-            raise HTTPException(detail=str(e))
-
-    async def set_as_rejected(self, id: int, request: Request):
-        try:
-            db_obj = await self.repair_request_repo.partial_update(id, {"status": RequestStatus.REJECTED})
-            msg = {
-                "title": f"So'rovnoma bekor qilindi : {db_obj.id}",
-                "request_id": db_obj.id,
-                "receiver_id": db_obj.owner_id,
-                "message": "Sizning so'rovnomangiz ma'lum sabablarga ko'ra bekor qilindi so'rovnomani qayta yuborishingizni tavsiya qilamiz",
-                "sender_id": db_obj.master_id
+            user_id = await self._get_user_id(request)
+            update_data = {
+                "master_id": user_id,
+                "price": data_in.price,
+                "end_date": data_in.end_date,
+                "status": RequestStatus.APPROVED,
+                **data_in.model_dump(exclude={"components", "price", "end_date"})
             }
-            await self.notification_repo.create_notification(msg)
-            await send_notification(msg["title"], db_obj.owner.email, msg["message"])
-            return JSONResponse({"message": "So'rovnoma muvaffaqiyatli rad etildi"})
+            req = await self.repair_request_repo.partial_update(id, update_data)
+            components = [c.model_dump() for c in data_in.components]
+            await self.repair_request_repo.attach_components_to_request(id, components)
+
+            owner = await self.user_repo.get_user_by_id(req.owner_id)
+            managers = await self.user_repo.get_all_users(role=Roles.MANAGER)
+
+            await self._send_and_create_notifications(
+                [owner] + managers,
+                f"So'rovnoma {id} master tomonidan qabul qilindi",
+                "So'rovnoma master tomonidan tasdiqlandi va ma'lumotlar yangilandi.",
+                user_id,
+                id,
+                "view"
+            )
+
+            return JSONResponse({"message": "So'rovnoma master tomonidan tasdiqlandi va yangilandi."})
+
+        except ResourceNotFoundException as e:
+            raise HTTPException(status_code=404, detail=str(e))
+
+    async def update_status(self, id: int, status: RequestStatus, request: Request, message: Optional[str] = None):
+        try:
+            user_id = await self._get_user_id(request)
+            db_obj = await self.repair_request_repo.partial_update(id, {"status": status})
+
+            owner = await self.user_repo.get_user_by_id(db_obj.owner_id)
+            master = await self.user_repo.get_user_by_id(db_obj.master_id) if db_obj.master_id else None
+            managers = await self.user_repo.get_all_users(role=Roles.MANAGER)
+
+            if status == RequestStatus.APPROVED:
+                sender = await self.user_repo.get_user_by_id(user_id)
+                if sender.role == Roles.MANAGER:
+                    await self._send_and_create_notifications(
+                        [owner],
+                        "So'rovnoma menejer tomonidan tasdiqlandi",
+                        "Buyurtmangiz menejer tomonidan tasdiqlandi.",
+                        user_id,
+                        id,
+                        "view"
+                    )
+                elif sender.role == Roles.USER:
+                    recipients = managers + ([master] if master else [])
+                    await self._send_and_create_notifications(
+                        recipients,
+                        "Foydalanuvchi so'rovnomani tasdiqladi",
+                        "So‘rovnoma foydalanuvchi tomonidan tasdiqlandi.",
+                        user_id,
+                        id,
+                        "view"
+                    )
+            else:
+                messages = {
+                    RequestStatus.REJECTED: "So'rovnoma rad etildi",
+                    RequestStatus.COMPLETED: "So'rovnoma bajarildi",
+                    RequestStatus.IN_PROGRESS: "Ish jarayoni boshlandi",
+                    RequestStatus.CHECKED: "So'rovnoma tekshirildi"
+                }
+                msg = message or messages.get(
+                    status, f"So'rovnoma statusi {status.name} ga o'zgartirildi")
+                if owner:
+                    await self._send_and_create_notifications(
+                        [owner],
+                        "So'rovnoma holati yangilandi",
+                        msg,
+                        user_id,
+                        id,
+                        "view"
+                    )
+
+            return JSONResponse({"message": f"So'rovnoma holati: {status.name}"})
+
         except ResourceNotFoundException as e:
             raise HTTPException(detail=str(e))
 
     async def set_as_approved(self, id: int, request: Request):
-        try:
-            user_id = getattr(request.state, "user").get("id")
-            db_obj = await self.repair_request_repo.partial_update(id, {"status": RequestStatus.APPROVED})
-            masters = await self.user_repo.get_all_users(role=Roles.MASTER)
-            for master in masters:
-                msg = {
-                    "title": f"Yangi so'rovnoma tasdiqlandi: {db_obj.id}",
-                    "receiver_id": db_obj.owner_id,
-                    "sender_id": user_id,
-                    "for_action": "approve",
-                    "message": "Sizning so'rovnomangiz tasdiqlandi bizning xizmatimiz va narxlarimiz sizga ma'qul bo'lsa murojatlar bo'limiga o'tib tasdiqlash tugmasini bosing"
-                }
-                await self.notification_repo.create_notification(msg)
-                await send_notification(msg["title"], master.email, msg["message"])
-            return JSONResponse({"message": "So'rovnoma muvaffaqiyatli qabul qilindi"})
-        except ResourceNotFoundException as e:
-            raise HTTPException(detail=str(e))
+        return await self.update_status(id, RequestStatus.APPROVED, request)
 
-    async def set_as_completed(self, id: int):
-        try:
-            await self.repair_request_repo.partial_update(id, {"status": RequestStatus.COMPLETED})
-            return JSONResponse({"message": "So'rovnoma muvaffaqiyatli tekshirildi"})
-        except ResourceNotFoundException as e:
-            raise HTTPException(detail=str(e))
+    async def set_as_rejected(self, id: int, request: Request):
+        return await self.update_status(id, RequestStatus.REJECTED, request)
+
+    async def set_as_completed(self, id: int, request: Request):
+        return await self.update_status(id, RequestStatus.COMPLETED, request)
 
     async def set_as_in_progress(self, id: int, request: Request):
-        user_id = getattr(request.state, "user").get("id")
+        return await self.update_status(id, RequestStatus.IN_PROGRESS, request, "Ishni boshlandi!")
+
+    async def set_as_checked(self, id: int, request: Request):
+        return await self.update_status(id, RequestStatus.CHECKED, request)
+
+    async def get_repair_request(self, id: int):
         try:
-            db_obj = await self.repair_request_repo.partial_update(id, {"status": RequestStatus.IN_PROGRESS})
-            msg = {
-                "title": f"Yangi so'rovnoma tasdiqlandi: {id}",
-                "receiver_id": db_obj.master.id,
-                "sender_id": user_id,
-                "for_action": "approve",
-                "message": "Boshlashingiz mumkin"
-            }
-            await self.notification_repo.create_notification(msg)
-            await send_notification(msg["title"], db_obj.master.email, msg["message"])
-            return JSONResponse({"message": "So'rovnoma muvaffaqiyatli rad etildi"})
+            request_obj = await self.repair_request_repo.get_by_id(id)
+            return RepairRequestResponse.model_validate(request_obj)
         except ResourceNotFoundException as e:
             raise HTTPException(detail=str(e))
 
-    async def set_as_checked(self, id: int, request: Request):
-        try:
-            user_id = getattr(request.state, "user").get("id")
-            db_obj = await self.repair_request_repo.partial_update(id, {"status": RequestStatus.CHECKED})
-            msg = {
-                "title": f"Yangi so'rovnoma tasdiqlandi: {db_obj.id}",
-                "receiver_id": db_obj.owner_id,
-                "sender_id": user_id,
-                "for_action": "view",
-                "message": "Sizning so'rovnomangiz tasdiqlandi bizning xizmatimiz va narxlarimiz sizga ma'qul kelsa tasdiqlash tugmasini bosing"
-            }
-            await self.notification_repo.create_notification(msg)
-            await send_notification(msg["title"], db_obj.owner.email, msg["message"])
-            return JSONResponse({"message": "So'rovnoma muvaffaqiyatli tekshirildi"})
-        except ResourceNotFoundException as e:
-            raise HTTPException(detail=str(e))
+    async def get_all(self, status: Optional[RequestStatus] = None):
+        requests = await self.repair_request_repo.get_all(status)
+        return [RepairRequestResponse.model_validate(req) for req in requests]
+
+    async def get_my_repair_requests(self, request: Request):
+        user_id = await self._get_user_id(request)
+        return await self.repair_request_repo.get_by_owner_id(user_id)
+
+    async def get_master_repair_requests(self, request: Request):
+        user_id = await self._get_user_id(request)
+        return await self.repair_request_repo.get_by_master_id(user_id)
 
     async def delete_request(self, id: int):
         try:

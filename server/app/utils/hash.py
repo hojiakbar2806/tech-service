@@ -1,19 +1,17 @@
+import bcrypt
 import secrets
-from typing import Tuple, Union
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
-
-argon2_hasher = PasswordHasher()
 
 
 def hash_password(password: str) -> str:
-    return argon2_hasher.hash(password)
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
 
-def verify_password(plain_password: str, hashed_password: str) -> Tuple[bool, Union[str, None]]:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return argon2_hasher.verify(hashed_password, plain_password)
-    except VerifyMismatchError:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
         return False
 
 

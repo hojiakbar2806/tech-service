@@ -8,9 +8,9 @@ const ProfileLayout = () => {
         <SessionProvider role={['user']}>
             <div className='h-screen flex flex-col'>
                 <ProfileNavbar />
-                <div className='flex w-full'>
+                <div className="flex w-full h-[calc(100%-80px)]">
                     <ProfileSidebar />
-                    <div className='h-full overflow-auto flex flex-col w-full px-4 py-5 sm:px-6 lg:px-8'>
+                    <div className="w-full md:w-[calc(100%-280px)] flex flex-col p-5 overflow-auto">
                         <Outlet />
                     </div>
                 </div>

@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import useApi from "@/hooks/useApi"
 import { Button } from "@/components/ui/button"
 import { CheckCheck } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton" // Skeleton componenti kerak
 
 interface Notification {
     id: number
@@ -19,24 +20,44 @@ export default function NotificationsPage() {
         queryFn: () => api.get<Notification[]>("/notifications"),
     })
 
-    const markAsRead = useMutation({ mutationFn: (data: number[]) => api.post(`/notifications/as-read`, data) })
+    const markAsRead = useMutation({
+        mutationFn: (data: number[]) => api.post(`/notifications/as-read`, data),
+        onSettled: () => {
+            refetch()
+        },
+    })
 
     const notifications = data?.data ?? []
 
     const handleMarkAsRead = async () => {
         const unSeenMsgId = notifications.filter((notif) => !notif.seen).map((notif) => notif.id)
-        await markAsRead.mutateAsync(unSeenMsgId)
-        await refetch()
+        if (unSeenMsgId.length > 0) {
+            await markAsRead.mutateAsync(unSeenMsgId)
+        }
     }
 
     return (
-        <div className="space-y-4 px-4">
+        <div className="space-y-4 h-full">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Sizning Murojatlaringiz</h2>
+                <h2 className="text-3xl font-bold text-gray-900">Bildirishnomalar</h2>
                 {notifications.some((notif) => !notif.seen) && (
-                    <Button className="cursor-pointer" onClick={handleMarkAsRead}>O'qilgan deb belgilash</Button>
+                    <Button
+                        className="cursor-pointer"
+                        onClick={handleMarkAsRead}
+                        disabled={markAsRead.isPending}
+                    >
+                        {markAsRead.isPending ? "Yuklanmoqda..." : "O'qilgan deb belgilash"}
+                    </Button>
                 )}
             </div>
+
+            {isLoading && (
+                <div className="flex flex-col gap-2">
+                    {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-[60px] w-full rounded-md" />
+                    ))}
+                </div>
+            )}
 
             {notifications.length === 0 && !isLoading && (
                 <p className="text-muted-foreground text-sm">
@@ -56,15 +77,17 @@ export default function NotificationsPage() {
                                 <h2 className="font-semibold text-lg">{notif.title}</h2>
                                 <p className="text-muted-foreground">{notif.message}</p>
                             </div>
-                            {!notif.seen && <Button
-                                onClick={async () => {
-                                    await markAsRead.mutateAsync([notif.id])
-                                    await refetch()
-                                }}
-                                className="cursor-pointer"
-                            >
-                                <CheckCheck/>
-                            </Button>}
+                            {!notif.seen && (
+                                <Button
+                                    onClick={async () => {
+                                        await markAsRead.mutateAsync([notif.id])
+                                    }}
+                                    disabled={markAsRead.isPending}
+                                    className="cursor-pointer"
+                                >
+                                    <CheckCheck />
+                                </Button>
+                            )}
                         </div>
                         <p className="text-end text-sm text-muted-foreground">
                             {new Date(notif.created_at).toLocaleString()}

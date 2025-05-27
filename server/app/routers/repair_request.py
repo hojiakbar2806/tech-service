@@ -8,7 +8,13 @@ from app.core.enums import RequestStatus
 from app.database.session import get_async_session
 from app.core.permission import permission_required
 from app.controllers.repair_request import RepairRequestController
-from app.schemas.repair_request import RepairRequestResponse, RepairRequestCreate, RepairRequestUpdate, PersonalizedRepairRequest
+from app.schemas.repair_request import (
+    RepairRequestUpdate,
+    RepairRequestCreate,
+    RepairRequestResponse,
+    PersonalizedRepairRequest,
+    RepairRequestWithUserRequest
+)
 
 router = APIRouter(prefix="/repair-requests", tags=["Repair Requests"])
 
@@ -65,13 +71,12 @@ async def set_as_completed(
     return await controller.set_as_completed(id)
 
 
-@router.post("/{email}/create")
+@router.post("/create-with-user")
 async def create_repair_request(
-    email: str,
-    data_in: RepairRequestCreate,
+    data_in: RepairRequestWithUserRequest,
     controller: RepairRequestController = Depends(controller)
 ):
-    return await controller.create_request_by_email(email, data_in)
+    return await controller.create_request_with_user(data_in)
 
 
 @router.get("/{id}", response_model=RepairRequestResponse)

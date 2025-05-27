@@ -35,8 +35,13 @@ class RepairRequest(Base):
         foreign_keys=[master_id], passive_deletes=True
     )
 
-    @property
-    def estimated_completion(self):
-        if self.end_time:
-            return int((self.end_time-datetime.datetime.now(datetime.timezone.utc)).total_seconds())
-        return None
+    component_links = relationship(
+        "RepairRequestComponent",
+        back_populates="repair_request",
+        cascade="all, delete-orphan"
+    )
+    components = relationship(
+        "Component",
+        secondary="repair_request_components",
+        viewonly=True
+    )

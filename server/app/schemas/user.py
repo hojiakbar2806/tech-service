@@ -24,8 +24,8 @@ class PartialUpdateUser(BaseModel):
     first_name: str = Field(None, min_length=2)
     last_name: str = Field(None, min_length=2)
     email: str = Field(None)
-    hashed_password: str = Field(None, alias="new_password")
-    old_password: str = Field(None)
+    hashed_password: Optional[str] = Field(None, alias="new_password")
+    old_password: Optional[str] = Field(None)
 
 
 class UserResponse(BaseModel):

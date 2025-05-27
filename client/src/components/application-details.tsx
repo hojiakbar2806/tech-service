@@ -9,14 +9,14 @@ const ApplicationDetail = ({ tLoading, rLoading, application, open, onClose, han
             data-open={open}
             className="fixed inset-0 opacity-0 pointer-events-none bg-black/50 bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300
             data-[open=true]:opacity-100 data-[open=true]:pointer-events-auto"
-            onClick={onClose}
         >
             <div className="max-w-3xl w-full bg-white p-6 rounded-lg shadow-lg">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold text-gray-900 mb-4">
                         Murojat tafsilotlari
                     </h1>
-                    <Button variant="destructive" className="cursor-pointer">
+                    <Button variant="destructive" className="cursor-pointer"
+                        onClick={onClose}>
                         <X />
                     </Button>
                 </div>

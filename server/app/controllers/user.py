@@ -50,8 +50,8 @@ class UserController:
                         status_code=400, detail="Oldingi parolni kiritishingiz shart"
                     )
                 if verify_password(data_in.old_password, db_user.hashed_password):
-
-                    data_in.hashed_password = hash_password(data_in.hashed_password)
+                    data_in.hashed_password = hash_password(
+                        data_in.hashed_password)
                 else:
                     raise HTTPException(
                         status_code=400, detail="Parol mos kelmadi")

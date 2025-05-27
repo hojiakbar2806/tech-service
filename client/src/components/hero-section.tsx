@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button"
+import useDrawerStore from "@/hooks/useModalStore"
 
 export function HeroSection() {
+    const { open } = useDrawerStore()
+
     return (
         <div className="relative bg-white overflow-hidden my-10">
             <div className="mx-auto max-w-7xl">
@@ -23,8 +26,9 @@ export function HeroSection() {
                             </h1>
                             <p className="mt-3 max-w-md text-base text-gray-500 sm:mx-auto sm:mt-5 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl lg:mx-0">
                                 Tezda bog‘lanish uchun email manzilingizni qoldiring — biz siz bilan albatta bog‘lanamiz!                            </p>
-                            <Button asChild className="cursor-pointer mt-2">
-                                <a href="#cta">So'rov yuborish</a>
+                            <Button className="cursor-pointer mt-2"
+                                onClick={() => open("multiStepForm")}>
+                                So'rov yuborish
                             </Button>
                         </div>
                     </main>

@@ -9,9 +9,9 @@ const DashboardLayout: React.FC = () => {
         <SessionProvider role={["master", "manager"]}>
             <div className="h-screen flex flex-col">
                 <ProfileNavbar />
-                <div className="flex w-full h-[calc(100%-100px)]">
+                <div className="flex w-full h-[calc(100%-80px)]">
                     <DashboardSidebar />
-                    <div className="w-full md:w-[calc(100%-280px)] flex flex-col p-5">
+                    <div className="w-full md:w-[calc(100%-280px)] flex flex-col p-5 overflow-auto">
                         <Outlet />
                     </div>
                 </div>
