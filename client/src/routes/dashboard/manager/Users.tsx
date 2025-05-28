@@ -38,6 +38,7 @@ type User = {
     role: string;
     created_at?: string;
     updated_at?: string;
+    is_legal_entity?: boolean;
 };
 
 const userSchema = z.object({
@@ -316,7 +317,7 @@ export default function UsersPage() {
                                     <TableCell className="p-2 px-6">{displayValue(user.first_name)}</TableCell>
                                     <TableCell className="p-2 px-6">{displayValue(user.last_name)}</TableCell>
                                     <TableCell className="p-2 px-6">{displayValue(user.email)}</TableCell>
-                                    <TableCell className="p-2 px-6">{displayValue(user.role)}</TableCell>
+                                    <TableCell className="p-2 px-6">{displayValue(user.is_legal_entity ? "yuridik" : user.role)}</TableCell>
                                     <TableCell className="p-2 px-6">{displayDate(user.created_at)}</TableCell>
                                     <TableCell className="p-2 px-6">{displayDate(user.updated_at)}</TableCell>
                                     <TableCell className="p-2 px-6">
@@ -335,6 +336,6 @@ export default function UsersPage() {
                     </TableBody>
                 </Table>
             </div>
-        </div>
+        </div >
     );
 }

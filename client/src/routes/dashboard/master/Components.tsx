@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useApi from "@/hooks/useApi";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,16 +42,15 @@ const componentSchema = z.object({
 
 type FormData = z.infer<typeof componentSchema>;
 
-
 export default function ComponentsPage() {
     const api = useApi();
+    const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [editComponent, setEditComponent] = useState<Component | null>(null);
 
-    const { data: components = [], isLoading, isError, refetch } = useQuery({
+    const { data: components = [], isPending, isError } = useQuery({
         queryKey: ["components"],
-        queryFn: () => api.get("/components"),
-        select: (res) => res.data,
+        queryFn: () => api.get("/components").then(res => res.data),
     });
 
     const { control, register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
@@ -68,27 +67,23 @@ export default function ComponentsPage() {
         mutationFn: (data: FormData) => api.post("/components", data),
         onSuccess: () => {
             toast.success("Komponent muvaffaqiyatli qo‘shildi!");
+            queryClient.invalidateQueries({ queryKey: ["components"] });
             setModalOpen(false);
             reset();
-            refetch();
         },
-        onError: () => {
-            toast.error("Komponent qo‘shishda xatolik yuz berdi");
-        },
+        onError: () => toast.error("Komponent qo‘shishda xatolik yuz berdi"),
     });
 
     const updateMutation = useMutation({
         mutationFn: (data: FormData & { id: number }) => api.patch(`/components/${data.id}`, data),
         onSuccess: () => {
             toast.success("Komponent muvaffaqiyatli yangilandi!");
+            queryClient.invalidateQueries({ queryKey: ["components"] });
             setModalOpen(false);
             setEditComponent(null);
             reset();
-            refetch();
         },
-        onError: () => {
-            toast.error("Komponent yangilashda xatolik yuz berdi");
-        },
+        onError: () => toast.error("Komponent yangilashda xatolik yuz berdi"),
     });
 
     const onSubmit = (data: FormData) => {
@@ -116,13 +111,15 @@ export default function ComponentsPage() {
         reset();
     };
 
+    const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
     return (
         <div className="w-full flex flex-col h-full">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">Komponentlar</h1>
                 <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger asChild>
-                        <Button className="cursor-pointer" onClick={() => setModalOpen(true)}>
+                        <Button onClick={() => setModalOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Komponent qo‘shish
                         </Button>
@@ -134,23 +131,13 @@ export default function ComponentsPage() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div>
                                 <Label htmlFor="name">Nomi</Label>
-                                <Input
-                                    id="name"
-                                    placeholder="Komponent nomini kiriting"
-                                    {...register("name")}
-                                    disabled={createMutation.isPending || updateMutation.isPending}
-                                />
+                                <Input id="name" {...register("name")} disabled={isSubmitting} placeholder="Komponent nomi" />
                                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                             </div>
 
                             <div>
                                 <Label htmlFor="description">Tavsif</Label>
-                                <Input
-                                    id="description"
-                                    placeholder="Komponent tavsifini kiriting"
-                                    {...register("description")}
-                                    disabled={createMutation.isPending || updateMutation.isPending}
-                                />
+                                <Input id="description" {...register("description")} disabled={isSubmitting} placeholder="Tavsif" />
                                 {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
                             </div>
 
@@ -164,10 +151,10 @@ export default function ComponentsPage() {
                                             id="in_stock"
                                             type="number"
                                             min="0"
-                                            placeholder="Soni kiriting"
                                             value={field.value}
                                             onChange={(e) => field.onChange(Number(e.target.value))}
-                                            disabled={createMutation.isPending || updateMutation.isPending}
+                                            disabled={isSubmitting}
+                                            placeholder="Soni"
                                         />
                                     )}
                                 />
@@ -185,10 +172,10 @@ export default function ComponentsPage() {
                                             type="number"
                                             min="0"
                                             step="0.01"
-                                            placeholder="Narx kiriting"
                                             value={field.value}
                                             onChange={(e) => field.onChange(Number(e.target.value))}
-                                            disabled={createMutation.isPending || updateMutation.isPending}
+                                            disabled={isSubmitting}
+                                            placeholder="Narx"
                                         />
                                     )}
                                 />
@@ -196,25 +183,13 @@ export default function ComponentsPage() {
                             </div>
 
                             <div className="flex justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="cursor-pointer"
-                                    onClick={closeModal}
-                                    disabled={createMutation.isPending || updateMutation.isPending}
-                                >
+                                <Button type="button" variant="outline" onClick={closeModal} disabled={isSubmitting}>
                                     Bekor qilish
                                 </Button>
-                                <Button
-                                    type="submit"
-                                    className="cursor-pointer"
-                                    disabled={createMutation.isPending || updateMutation.isPending}
-                                >
-                                    {createMutation.isPending || updateMutation.isPending
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting
                                         ? "Saqlanmoqda..."
-                                        : editComponent
-                                            ? "Yangilash"
-                                            : "Qo‘shish"}
+                                        : editComponent ? "Yangilash" : "Qo‘shish"}
                                 </Button>
                             </div>
                         </form>
@@ -235,7 +210,7 @@ export default function ComponentsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
+                        {isPending ? (
                             [...Array(5)].map((_, i) => (
                                 <TableRow key={i} className="animate-pulse">
                                     {[...Array(6)].map((__, j) => (
@@ -270,7 +245,6 @@ export default function ComponentsPage() {
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => openEditModal(component)}
-                                            className="cursor-pointer"
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </Button>

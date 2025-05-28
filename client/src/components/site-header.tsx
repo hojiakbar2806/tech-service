@@ -1,17 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { useSession } from "@/hooks/useSession"
 import { Link } from "react-router-dom"
+import { UserDropdown } from "./user-drop-down"
 
 export function SiteHeader() {
     const { session } = useSession()
-    let redirectPath = "/auth/login"
-
-    if (session && session.user.role === "user") {
-        redirectPath = "/profile"
-    }
-    if (session && (session.user.role === "manager" || session.user.role === "master")) {
-        redirectPath = "/dashboard"
-    }
 
     return (
         <header className="bg-white shadow sticky top-0 z-30">
@@ -33,9 +26,20 @@ export function SiteHeader() {
                     </a>
                 </nav>
                 <div>
-                    <Button asChild>
-                        <Link to={redirectPath}>Kirish</Link>
-                    </Button>
+                    {session ? (
+                        <UserDropdown />
+                    ) : (
+                        <>
+                            <Button asChild>
+                                <Link to={"/auth/login"}>Kirish</Link>
+                            </Button>
+                            <Button asChild className="ml-2">
+                                <Link to={"/auth/register"}>Ro'yxatdan o'tish</Link>
+                            </Button>
+                        </>
+                    )
+                    }
+
                 </div>
             </div>
         </header>

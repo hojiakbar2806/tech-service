@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import useDrawerStore from "@/hooks/useModalStore"
 import api from "@/lib/api"
+import { useSession } from "@/hooks/useSession"
 
 const schemaStep1 = z.object({
     first_name: z.string().min(1, "Ism kiriting"),
@@ -51,18 +52,21 @@ type FormData = {
 }
 
 export default function MultiStepDialogForm() {
+    const { session } = useSession()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [step1Data, setStep1Data] = useState<Step1Data | null>(null)
     const { open, close, multiStepForm } = useDrawerStore()
 
+    const isUserLoggedIn = !!session?.user?.email && !!session?.user?.first_name && !!session?.user?.last_name;
+
     const step1Form = useForm<Step1Data>({
         mode: "onSubmit",
         resolver: zodResolver(schemaStep1),
         defaultValues: {
-            first_name: "",
-            last_name: "",
-            email: "",
+            first_name: session?.user?.first_name ?? "",
+            last_name: session?.user?.last_name ?? "",
+            email: session?.user?.email ?? "",
         },
     })
 
@@ -196,6 +200,8 @@ export default function MultiStepDialogForm() {
                                             <div className="relative">
                                                 <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                                                 <Input
+                                                    readOnly={isUserLoggedIn}
+                                                    disabled={isUserLoggedIn}
                                                     id="first_name"
                                                     placeholder="Ismingizni kiriting"
                                                     className={`pl-12 h-14 text-lg border-2 rounded-xl transition-all duration-300 ${step1Form.formState.errors.first_name
@@ -219,6 +225,8 @@ export default function MultiStepDialogForm() {
                                             <div className="relative">
                                                 <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                                                 <Input
+                                                    readOnly={isUserLoggedIn}
+                                                    disabled={isUserLoggedIn}
                                                     id="last_name"
                                                     placeholder="Familiyangizni kiriting"
                                                     className={`pl-12 h-14 text-lg border-2 rounded-xl transition-all duration-300 ${step1Form.formState.errors.last_name
@@ -242,6 +250,8 @@ export default function MultiStepDialogForm() {
                                             <div className="relative">
                                                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                                                 <Input
+                                                    readOnly={isUserLoggedIn}
+                                                    disabled={isUserLoggedIn}
                                                     id="email"
                                                     type="email"
                                                     placeholder="example@email.com"

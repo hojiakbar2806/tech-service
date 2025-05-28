@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import useApi from "@/hooks/useApi";
@@ -28,39 +28,51 @@ import { formatDate } from "@/lib/utils";
 
 export default function Applications() {
     const api = useApi();
+    const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
     const [selectedApp, setSelectedApp] = useState<Application | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const selectedStatus = searchParams.get("status") || "all";
 
-    const { data: applications = [], isLoading, isError, refetch } = useQuery({
+    const { data: appsRaw, isPending, isError } = useQuery<Application[]>({
         queryKey: ["applications"],
         queryFn: async () => {
-            const checked = await api.get("/repair-requests?status=checked");
-            const other = await api.get("/repair-requests/master");
-
+            const [checked, other] = await Promise.all([
+                api.get("/repair-requests?status=checked"),
+                api.get("/repair-requests/master")
+            ]);
             const checkedData = Array.isArray(checked.data) ? checked.data : [];
             const otherData = Array.isArray(other.data) ? other.data : [];
-
-            return [...checkedData, ...otherData] as Application[];
-        }
+            return [...checkedData, ...otherData];
+        },
     });
 
-    const handleComplete = async (app: Application) => {
-        try {
-            await api.patch(`/repair-requests/${app.id}/as-completed`);
-            toast.success("Murojaat tugatildi");
-            refetch();
-        } catch {
-            toast.error("Tugatishda xatolik yuz berdi");
-        }
-    };
+    const apps = useMemo(() => {
+        if (!Array.isArray(appsRaw)) return [];
+        return appsRaw.sort((a, b) => b.id - a.id);
+    }, [appsRaw]);
 
-    const filteredApps = selectedStatus === "all" ? applications : applications?.filter((app) => app.status === selectedStatus);
+    const filteredApps = useMemo(() => {
+        if (!Array.isArray(apps)) return [];
+        return selectedStatus === "all" ? apps : apps.filter(app => app.status === selectedStatus);
+    }, [apps, selectedStatus]);
+
+    const completeMutation = useMutation({
+        mutationFn: async (app: Application) => {
+            await api.patch(`/repair-requests/${app.id}/as-completed`);
+        },
+        onSuccess: () => {
+            toast.success("Murojaat tugatildi");
+            queryClient.invalidateQueries({ queryKey: ["applications"] });
+        },
+        onError: () => {
+            toast.error("Tugatishda xatolik yuz berdi");
+        },
+    });
 
     const openModalWithApp = (app: Application) => {
-        if (app.status === "checked") {
+        if (!isPending && app.status === "checked") {
             setSelectedApp(app);
             setOpen(true);
         }
@@ -105,7 +117,7 @@ export default function Applications() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
+                        {isPending ? (
                             [...Array(5)].map((_, i) => (
                                 <TableRow key={i} className="animate-pulse">
                                     {[...Array(7)].map((__, j) => (
@@ -128,7 +140,7 @@ export default function Applications() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredApps.map((app: Application) => (
+                            filteredApps.map((app) => (
                                 <TableRow
                                     key={app.id}
                                     className={app.status === "checked" ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"}
@@ -150,9 +162,10 @@ export default function Applications() {
                                                 size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleComplete(app);
+                                                    completeMutation.mutate(app);
                                                 }}
                                                 className="cursor-pointer bg-blue-500 hover:bg-blue-600"
+                                                disabled={completeMutation.isPending}
                                             >
                                                 Tugatish
                                             </Button>
@@ -165,7 +178,12 @@ export default function Applications() {
                 </Table>
             </div>
 
-            <ApplicationModal open={open} setOpen={setOpen} selectedApp={selectedApp} refetch={refetch} />
+            <ApplicationModal
+                open={open}
+                setOpen={setOpen}
+                selectedApp={selectedApp}
+                refetch={() => queryClient.invalidateQueries({ queryKey: ["applications"] })}
+            />
         </div>
     );
 }

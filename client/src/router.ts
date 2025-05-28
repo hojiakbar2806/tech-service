@@ -16,6 +16,7 @@ import NotificationsPage from "./routes/Notifications";
 import SettingsPage from "./routes/Settings.tsx";
 import UsersPage from "./routes/dashboard/manager/Users.tsx";
 import ComponentsPage from "./routes/dashboard/master/Components.tsx";
+import RegisterPage from "./routes/auth/Register.tsx";
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
           {
             path: "login",
             Component: LoginPage,
+          },
+          {
+            path: "register",
+            Component: RegisterPage,
           },
         ],
       },

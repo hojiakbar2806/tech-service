@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
 import type { Application } from "@/types/application";
 import { getStatus } from "@/components/get-status";
 import { STATUS_OPTIONS } from "@/lib/const";
@@ -193,13 +192,6 @@ export default function Applications() {
             <h3 className="text-lg font-semibold text-gray-900">
               Murojaat ID: {application?.id}
             </h3>
-            <button
-              aria-label="Yopish"
-              className="text-gray-500 hover:text-gray-700"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </button>
           </header>
 
           {application && (
