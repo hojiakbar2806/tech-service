@@ -1,8 +1,9 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.exc import IntegrityError
 from app.core.enums import Roles
-from app.core.exceptions import ResourceNotFoundException
+from app.core.exceptions import EmailException, ResourceNotFoundException
 from app.database.models.user import User
 
 
@@ -15,12 +16,18 @@ class UserRepository:
         result = await self.db.execute(query)
         return result.scalars().first()
 
+
     async def create_user(self, user_data: dict) -> User:
         user = User(**user_data)
         self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        return user
+        try:
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        except IntegrityError:
+            await self.db.rollback()
+            raise EmailException()
+
 
     async def get_user_by_id(self, user_id: int) -> User:
         query = select(User).filter(User.id == user_id)

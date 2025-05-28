@@ -1,22 +1,20 @@
-# imports (boshida turganlar) o'zgarmagan
-import asyncio
 import secrets
-from typing import List, Optional
+from typing import Optional
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.utils.auth import auth_service
+from app.utils.hash import hash_password
 from app.core.enums import RequestStatus, Roles
 from app.controllers.auth import AuthController
-from app.repositories.notification import NotificationRepository
 from app.repositories.user import UserRepository
-from app.repositories.repair_request import RepairRequestRepository
-from app.schemas.repair_request import PersonalizedRepairRequest, RepairRequestCreate, RepairRequestResponse, RepairRequestWithUserRequest
-from app.utils.email import send_auth_link_to_user, send_notification
-from app.utils.auth import auth_service
-from app.core.config import settings
-from app.utils.hash import hash_password
+from app.utils.email import send_auth_link_to_user
 from app.core.exceptions import ResourceNotFoundException
+from app.repositories.notification import NotificationRepository
+from app.repositories.repair_request import RepairRequestRepository
+from app.schemas.repair_request import PersonalizedRepairRequest, RepairRequestResponse, RepairRequestWithUserRequest
 
 
 class RepairRequestController:
@@ -31,7 +29,6 @@ class RepairRequestController:
         return getattr(request.state, "user").get("id")
 
     async def _send_and_create_notifications(self, users, title, message, sender_id, request_id, for_action="aprove"):
-        tasks = []
         for user in users:
             await self.notification_repo.create_notification({
                 "title": f"{title}: {request_id}",
@@ -41,12 +38,7 @@ class RepairRequestController:
                 "sender_id": sender_id,
                 "message": message
             })
-            tasks.append(send_notification(title, user.email, message))
-        results = await asyncio.gather(*tasks)
-
         await self.db.commit()
-
-        return results
 
     async def create_request_with_user(self, data_in: RepairRequestWithUserRequest):
         db_user = await self.user_repo.get_by_email(data_in.user_data.email)
@@ -60,23 +52,15 @@ class RepairRequestController:
             data = data_in.user_data.model_dump()
             data["hashed_password"] = hashed_pw
             user = await self.user_repo.create_user(data)
+            masters = await self.user_repo.get_master_users()
+            await self._send_and_create_notifications(masters,"Yangi so'rovnoma yaratildi",request_data.get("description", ""),user.id,db_obj.id)
+            token = auth_service.create_one_time_token(user.id)
+            auth_url = f"{settings.client_url}/auth/verify/{token}"
+            await send_auth_link_to_user(user.email, auth_url, user.first_name, new_password)
 
         request_data = data_in.repair_request.model_dump()
         request_data["owner_id"] = user.id
         db_obj = await self.repair_request_repo.create_request(request_data, refresh=True)
-
-        masters = await self.user_repo.get_master_users()
-        await self._send_and_create_notifications(
-            masters,
-            "Yangi so'rovnoma yaratildi",
-            request_data.get("description", ""),
-            user.id,
-            db_obj.id
-        )
-
-        token = auth_service.create_one_time_token(user.id)
-        auth_url = f"{settings.client_url}/auth/verify/{token}"
-        await send_auth_link_to_user(user.email, auth_url, user.first_name, new_password)
 
         return JSONResponse({"message": f"So'rovnoma muvaffaqiyatli yaratildi. ID: {db_obj.id}"})
 

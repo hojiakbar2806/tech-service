@@ -12,5 +12,9 @@ class UserLoginRequest(BaseModel):
 class UserRegisterRequest(BaseModel):
     first_name: str = Field(..., min_length=2)
     last_name: str = Field(..., min_length=2)
+    is_legal_entity: Optional[bool]
+    company_name: Optional[str]
     email: str = Field(...)
     hashed_password: str = Field(..., alias="password")
+
+

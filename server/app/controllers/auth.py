@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from app.core.enums import Roles, TokenType
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.auth import AuthRepository
@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from app.core.config import settings
 from app.utils.auth import auth_service
 from app.schemas.user import UserResponse
+from app.schemas.auth import UserRegisterRequest
 from app.utils.hash import verify_password
 from app.utils.email import send_auth_link_to_user
 
@@ -17,6 +18,10 @@ class AuthController:
     def __init__(self, db: AsyncSession):
         self.user_repo = UserRepository(db)
         self.auth_repo = AuthRepository(db)
+
+    async def _get_user_id(self, request: Request) -> int:
+        user_id = getattr(request.state, "user").get("id")
+        return user_id
 
     async def send_auth_link(self, email: str) -> dict:
         try:
@@ -28,7 +33,7 @@ class AuthController:
                     status_code=400, detail="Siz ga faqat login parol bilan kirishga ruxsat etilgan"
                 )
             token = auth_service.create_one_time_token(user.id)
-            await send_auth_link_to_user(email,  f"{settings.client_url}/auth/verify/{token}")
+            await send_auth_link_to_user(email, f"{settings.client_url}/auth/verify/{token}",user.first_name,)
             return JSONResponse(
                 status_code=200,
                 content={
@@ -55,7 +60,7 @@ class AuthController:
                 status_code=200,
                 content={
                     "status": "success",
-                    "message": "Muvaffaqiyatli ro'yxatdan o'tdingiz"
+                    "message": "Kirish muvaffaqiyatli amalga oshirildi",
                 }
             )
             response.set_cookie(
@@ -81,7 +86,7 @@ class AuthController:
             status_code=200,
             content={
                 "status": "success",
-                "message": "Muvaffaqiyatli ro'yxatdan o'tdingiz",
+                "message": "Kirish muvaffaqiyatli amalga oshirildi",
                 "access_token": access_token,
                 "role": user.role
             }
@@ -94,6 +99,32 @@ class AuthController:
             samesite="strict"
         )
         return response
+    
+    async def register(self, data_in: UserRegisterRequest) -> dict:
+        try:
+            user = await self.user_repo.create_user(data_in.model_dump())
+            user_data = UserResponse.model_validate(user).model_dump()
+            access_token = auth_service.create_access_token(user_data)
+            refresh_token = auth_service.create_refresh_token(user.id)
+            response = JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "message": "Muvaffaqiyatli ro'yxatdan o'tdingiz",
+                "access_token": access_token,
+                "role": user.role
+            }
+        )
+            response.set_cookie(
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="strict"
+            )
+            return response
+        except EmailException as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     async def refresh_token(self, token: str) -> dict:
         try:
@@ -127,3 +158,8 @@ class AuthController:
         )
         response.delete_cookie("refresh_token")
         return response
+
+    async def user_me(self, request: Request) -> dict:
+        user_id = await self._get_user_id(request)
+        user = await self.user_repo.get_user_by_id(user_id)
+        return UserResponse.model_validate(user).model_dump()

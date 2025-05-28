@@ -14,7 +14,6 @@ class NotificationRepository:
         notif = Notification(**notification)
         self.db.add(notif)
         await self.db.commit()
-        await self.db.refresh(notif)
         return notif
 
     async def get_my_notifications(self, user_id: int):

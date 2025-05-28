@@ -68,7 +68,7 @@ async def set_as_completed(
     request: Request,
     controller: RepairRequestController = Depends(controller)
 ):
-    return await controller.set_as_completed(id)
+    return await controller.set_as_completed(id, request)
 
 
 @router.post("/create-with-user")

@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
 
 from app.controllers.auth import AuthController
+from app.schemas.auth import UserRegisterRequest
 from app.database.session import get_async_session
 from app.core.permission import permission_required
 
@@ -34,6 +35,14 @@ async def login_user(
     return await controller.login(username, password)
 
 
+@router.post("/register")
+async def register_user(
+    data_in: UserRegisterRequest,
+    controller: AuthController = Depends(controller)
+):
+    return await controller.register(data_in)
+
+
 @router.post("/refresh-token")
 async def refresh_token(
     request: Request,
@@ -45,9 +54,8 @@ async def refresh_token(
 
 @router.get("/me")
 @permission_required()
-async def user_me(request: Request):
-    user = getattr(request.state, "user", None)
-    return user
+async def user_me(request: Request, controller: AuthController = Depends(controller)):
+    return await controller.user_me(request)
 
 
 @router.post("/logout")
