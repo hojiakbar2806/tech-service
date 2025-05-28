@@ -26,7 +26,7 @@ class UserRepository:
             return user
         except IntegrityError:
             await self.db.rollback()
-            raise EmailException()
+            raise EmailException("Bu email allaqachon ro'yxatdan o'tgan")
 
 
     async def get_user_by_id(self, user_id: int) -> User:
