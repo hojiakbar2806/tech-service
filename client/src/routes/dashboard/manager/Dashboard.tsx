@@ -176,28 +176,28 @@ export default function Dashboard() {
                         )}
                     </div>
 
-                    <div className="w-full flex flex-col lg:flex-row gap-5 flex-wrap">
-                        <Card className="flex-1 min-w-[300px]">
-                            <CardHeader>
-                                <CardTitle className="text-center text-lg font-semibold text-gray-900">
-                                    Muammo turlari
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Pie className="m-auto"
-                                    data={issueTypeChartData}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: { position: "top", labels: { color: "#1f2937" } },
-                                        },
-                                    }}
-                                />
-                            </CardContent>
-                        </Card>
+                    <div className="w-full flex flex-col gap-5 flex-wrap">
+                        <div className="flex flex-col lg:flex-row gap-5">
+                            <Card className="flex-1 min-w-[300px]">
+                                <CardHeader>
+                                    <CardTitle className="text-center text-lg font-semibold text-gray-900">
+                                        Muammo turlari
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Pie className="m-auto"
+                                        data={issueTypeChartData}
+                                        options={{
+                                            responsive: true,
+                                            plugins: {
+                                                legend: { position: "top", labels: { color: "#1f2937" } },
+                                            },
+                                        }}
+                                    />
+                                </CardContent>
+                            </Card>
 
-                        <div className="flex flex-col gap-5 flex-1 min-w-[300px]">
-                            <Card>
+                            <Card className="flex-1 min-w-[300px]">
                                 <CardHeader>
                                     <CardTitle className="text-center text-lg font-semibold text-gray-900">
                                         Murojaat holatlari
@@ -217,28 +217,28 @@ export default function Dashboard() {
                                     />
                                 </CardContent>
                             </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-center text-lg font-semibold text-gray-900">
-                                        Murojaatlar manzillari
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <Bar className="w-full"
-                                        data={locationChartData}
-                                        options={{
-                                            responsive: true,
-                                            plugins: { legend: { display: false }, title: { display: false } },
-                                            scales: {
-                                                y: { beginAtZero: true, ticks: { color: "#1f2937" }, grid: { color: "#e5e7eb" } },
-                                                x: { ticks: { color: "#1f2937" }, grid: { display: false } },
-                                            },
-                                        }}
-                                    />
-                                </CardContent>
-                            </Card>
                         </div>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-center text-lg font-semibold text-gray-900">
+                                    Murojaatlar manzillari
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Bar className="w-full"
+                                    data={locationChartData}
+                                    options={{
+                                        responsive: true,
+                                        plugins: { legend: { display: false }, title: { display: false } },
+                                        scales: {
+                                            y: { beginAtZero: true, ticks: { color: "#1f2937" }, grid: { color: "#e5e7eb" } },
+                                            x: { ticks: { color: "#1f2937" }, grid: { display: false } },
+                                        },
+                                    }}
+                                />
+                            </CardContent>
+                        </Card>
                     </div>
                 </>
             )}

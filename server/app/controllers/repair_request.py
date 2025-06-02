@@ -52,8 +52,6 @@ class RepairRequestController:
             data = data_in.user_data.model_dump()
             data["hashed_password"] = hashed_pw
             user = await self.user_repo.create_user(data)
-            masters = await self.user_repo.get_master_users()
-            await self._send_and_create_notifications(masters,"Yangi so'rovnoma yaratildi",request_data.get("description", ""),user.id,db_obj.id)
             token = auth_service.create_one_time_token(user.id)
             auth_url = f"{settings.client_url}/auth/verify/{token}"
             await send_auth_link_to_user(user.email, auth_url, user.first_name, new_password)
