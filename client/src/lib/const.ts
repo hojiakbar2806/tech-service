@@ -1,6 +1,6 @@
 import { BellDot, CalendarCheck, ClipboardType, ComputerIcon, ContactRound, LayoutDashboard, Settings2, User2Icon } from "lucide-react";
 
-export const API_URL = "http://localhost:8000/api"
+export const API_URL = "https://computer-service.hojiakbar.me/api"
 
 
 export const STATUS_OPTIONS = [
