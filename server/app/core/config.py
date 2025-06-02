@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     db_name: str = Field(alias='POSTGRES_DB')
     db_host: str = Field(alias='POSTGRES_HOST')
     db_port: int = Field(alias='POSTGRES_PORT')
-    sql_mode: str = Field(alias='POSTGRES_SQL_MODE')
 
     @property
     def db_url(self):
